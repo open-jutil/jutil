@@ -48,51 +48,69 @@ class WeightedTVNorm(object):
     def __init__(self, basenorm, weight, indices):
         self._base = basenorm
         self._weight = weight
-        self._indices = indices
+        self._indices = [0] + indices
 
 
-    def _map(self, x):
-        xp = self._weight.dot(x)
+    def _map(self, x, xp=None):
+        if xp is None:
+            xp = self._weight.dot(x)
         i0 = 0
-        tv = np.zeros(self._indices[0])
-        for i1 in self._indices:
+        tv = np.zeros(self._indices[1])
+        for i1 in self._indices[1:]:
             tv +=  xp[i0:i1] ** 2
             i0 = i1
         tv = np.sqrt(tv)
         return np.concatenate([tv, xp[self._indices[-1]:]])
 
-    def _map_jacT_dot(self, x, vec):
-        xp1 = self._weight.dot(x)
-        xp2 = self._map(x)
+    def _map_jac_dot(self, x, vec, xp=None):
+        if xp is None:
+            xp1 = self._weight.dot(x)
+        else:
+            xp1 = xp
+        xp2 = self._map(x, xp=xp1)
+        result = np.zeros(self._weight.shape[0] - self._indices[-2])
+        Svec = self._weight.dot(vec)
+        for i in np.where(xp2 > 0):
+            inv = 1. / xp2[i]
+            for dist in self._indices[:-1]:
+                result[i] += inv * xp1[i + dist] * Svec[i + dist]
+
+        result[self._indices[1]:] = Svec[self._indices[-1]:]
+        return result
+
+    def _map_jacT_dot(self, x, vec, xp=None):
+        if xp is None:
+            xp1 = self._weight.dot(x)
+        else:
+            xp1 = xp
+        xp2 = self._map(x, xp=xp1)[:self._indices[1]]
         result = np.zeros(self._weight.shape[0])
-        for i in range(self._indices[1]):
-            if xp2[i] > 0:
-                xp2[i] = 1. / xp2[i]
-                for dist in self._indices:
-                    print result.shape, xp2.shape, xp1.shape, vec.shape, i, dist
-                    result[i + dist] = xp2[i] * xp1[i + dist] * vec[i]
-        result[self._indices[1]:] = vec[self._indices[-1]:]
+        for i in np.where(xp2 > 0):
+            inv = 1. / xp2[i]
+            for dist in self._indices[:-1]:
+                result[i + dist] += inv * xp1[i + dist] * vec[i]
+        result[self._indices[-1]:] = vec[self._indices[1]:]
         return self._weight.T.dot(result)
 
-    def _map_hess_dot(self, x, vec1, vec2):
-        xp1 = self._weight.dot(x)
+    def _map_hess_dot(self, x, vec1, vec2, xp=None):
+        if xp is None:
+            xp = self._weight.dot(x)
+        tvsum = np.zeros(self._indices[1])
         i0 = 0
-        tvsum = np.zeros(self._indices[0])
-        for i1 in self._indices:
-            tvsum +=  xp1[i0:i1] ** 2
+        for i1 in self._indices[1:]:
+            tvsum += xp[i0:i1] ** 2
             i0 = i1
         result = np.zeros(self._weight.shape[0])
-        for i in range(self._indices[1]):
-            if tvsum[i] > 0:
-                base1 = tvsum ** -1.5
-                base2 = 1. / np.sqrt(tvsum)
-                for ij, j in enumerate(self._indices):
-                    for ik, k in enumerate(self._indices):
-                        if j == k:
-                            fac = base2 - (xp1[i + j] ** 2) * base1
-                        else:
-                            fac = -base1 * xp1[i + j] * xp1[i + k]
-                        result[i + j] += vec1[i] * vec2[i + k] * fac
+        for i in np.where(tvsum > 0):
+            base1 = tvsum[i] ** -1.5
+            base2 = 1. / np.sqrt(tvsum[i])
+            for ij, j in enumerate(self._indices[:-1]):
+                for ik, k in enumerate(self._indices[:-1]):
+                    if j == k:
+                        fac = base2 - (xp[i + j] ** 2) * base1
+                    else:
+                        fac = -base1 * xp[i + j] * xp[i + k]
+                    result[i + j] += vec1[i] * vec2[i + k] * fac
         return self._weight.T.dot(result)
 
 
@@ -109,17 +127,18 @@ class WeightedTVNorm(object):
         return self._map_jacT_dot(x, temp2)
 
     def hess_dot(self, x, vec):
-        gSx = self._map(x)
+        Sx = self._weight.dot(x)
+        gSx = self._map(x, xp=Sx)
         Svec = self._weight.dot(vec)
-        dgSx_dot_Svec = self._map_jac_dot(x, Svec)
-        ddfgSx_dot_dgSx_dot_Svec = self._norm.hess_dot(gSx, dgSx_dot_Svec)
-        sgSxT_dot_ddfgSx_dot_dgSx_dot_Svec = self._map_jacT_dot(x, ddfgSx_dot_dgSx_dot_Svec)
+        dgSx_dot_Svec = self._map_jac_dot(x, vec, xp=Sx)
+        ddfgSx_dot_dgSx_dot_Svec = self._base.hess_dot(gSx, dgSx_dot_Svec)
+        sgSxT_dot_ddfgSx_dot_dgSx_dot_Svec = self._map_jacT_dot(x, ddfgSx_dot_dgSx_dot_Svec, xp=Sx)
 
-        dfgSx = self._norm.jac(gSx)
-        ddgSxT_dot_dfgSx_dot_Svec = self._map_hess_dot(x, dfgSx, Svec)
+        dfgSx = self._base.jac(gSx)
+        ddgSxT_dot_dfgSx_dot_Svec = self._map_hess_dot(x, dfgSx, Svec, xp=Sx)
 
         temp = sgSxT_dot_ddfgSx_dot_dgSx_dot_Svec + ddgSxT_dot_dfgSx_dot_Svec
-        return self._weight.T.dot(temp)
+        return temp#self._weight.T.dot(temp)
 
 
 
@@ -241,6 +260,7 @@ class WeightedNorm(object):
   }
 """
 
+
 class WeightedL2Square(object):
     """
     Norm is ||A x||_2^2 with A being a rectangular \p weight_ matrix.
@@ -269,7 +289,6 @@ class WeightedL2Square(object):
         return np.diagonal(self.hess(x))
 
 
-
 def _test():
     weight = np.arange(25).reshape(5, 5) / 25.
     x = np.arange(1, 6)[::-1]
@@ -286,11 +305,54 @@ def _test():
         fd_jac = np.asarray([(norm(x + h * np.eye(5)[:, i]) - norm(x)) / h for i in range(len(x))])
         print (np.ma.masked_invalid(abs(100 * fd_jac / norm.jac(x) - 100))).max()
 
+
 def _test2():
-    norm = WeightedTVNorm(NormL2Square(), np.diag(np.ones(4)), [1,2])
-    print norm(np.ones(4))
-    print norm.jac(np.ones(4))
+    W = np.zeros((6,4))
+    for i in range(4):
+        W[i, i] = 1 + i
+    W[4, 3] = 1
+    W[4, 2] = -1
+    W[5, 3] = 1
+    norm = WeightedTVNorm(NormLPPow(1., 0), W, [2,4])
 
+    x = 1 + np.arange(4)
+    h = 1e-6
+    def fd_jac(norm, x):
+        return np.asarray([(norm(x + h * np.eye(4)[:, i]) - norm(x)) / h for i in range(len(x))])
+    print "jac"
+#    print fd_jac(norm, x)
+#    print norm.jac(x)
+    print
+    print "hes"
+    def fd_hess(norm, x):
+       return np.asarray([(norm.jac(x + h * np.eye(4)[:, i]) - norm.jac(x)) / h for i in range(len(x))])
+    print fd_hess(norm, x)
+    print
+    print np.asarray([norm.hess_dot(x, np.eye(4)[:, i]) for i in range(len(x))])
 
+    print
+    print W
 
-_test2()
+    print
+    S = np.zeros((4, 4))
+    for i in range(4):
+        base = np.zeros(4)
+        base[i] = 1
+        S[:, i] = norm._map_jac_dot(x, base)
+#        print "ah", i, (norm._map(x + h * base) - norm._map(x))/h
+    print "a"
+    print S
+
+    print
+    for i in range(4):
+        base = np.zeros(4)
+        base[i] = 1
+        S[i, :] = norm._map_jacT_dot(x, base)
+    print "b"
+    print S
+    print
+    for i in range(4):
+        base = np.zeros(4)
+        base[i] = 1
+        print "h,", norm.hess_dot(x, base)
+#_test2()

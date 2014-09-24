@@ -2,23 +2,8 @@ import numpy as np
 import numpy.linalg as la
 
 
-class nocond_wrapper(object):
-    def __init__(self, A):
-        assert A.shape[0] == A.shape[1]
-        self._A = A
 
-    def dot(self, x):
-        return self._A.dot(x)
-
-    def cond(self, x):
-        return np.array(x, copy=True)
-
-    @property
-    def shape(self):
-        return self._A.shape
-
-
-class jacobi_wrapper(object):
+class JacobiCGWrapper(object):
     def __init__(self, A):
         assert A.shape[0] == A.shape[1]
         self._A = A
@@ -35,6 +20,39 @@ class jacobi_wrapper(object):
     @property
     def shape(self):
         return self._A.shape
+
+
+class CostFunctionCGWrapper(object):
+    def __init__(self, J, x, lmpar=0):
+        self._J = J
+        self._x = x
+        self._lmpar = lmpar
+
+    def dot(self, vec):
+        return self._J.hess_dot(self._x, vec) + self._lmpar * vec
+
+    def cond(self, vec):
+        return vec.copy() * (1. + self._lmpar)
+
+    @property
+    def shape(self):
+        return (self._J.n, self._J.n)
+
+
+class AT_dot_A_plus_lambda_I_CGWrapper(object):
+    def __init__(self, A, lambd):
+        self._A = A
+        self._lambda = lambd
+
+    def dot(self, x):
+        return self._A.T.dot(self._A.dot(x)) + self._lambda * x
+
+    def cond(self, x):
+        return x.copy()
+
+    @property
+    def shape(self):
+        return (self._A.shape[1], self._A.shape[1])
 
 
 def conj_grad_solve(A, b, max_iter, abs_tol, rel_tols):
@@ -64,13 +82,16 @@ def conj_grad_solve(A, b, max_iter, abs_tol, rel_tols):
 
     rel_tols = np.array(rel_tols, copy=True).reshape(-1)
     assert len(rel_tols) > 0
-
     assert np.all(np.diff(rel_tols) > 0)
+
+    if hasattr(A, "cond"):
+        Acond = A.cond
+    else:
+        Acond = lambda x: x.copy()
 
     x = np.zeros_like(b)
     r = b - A.dot(x)
-    p = A.cond(r)
-    print r.shape, p.shape
+    p = Acond(r)
     alpha = np.dot(r, p)
     norm_b = la.norm(b)
     xs = [0 for _ in xrange(len(rel_tols))]
@@ -79,15 +100,15 @@ def conj_grad_solve(A, b, max_iter, abs_tol, rel_tols):
         max_iter = A.shape[0]
 
     for i in xrange(max_iter):
-        norm = la.norm(r);
+        norm = la.norm(r)
         norm_div_norm_b = norm / norm_b
         for j in xrange(len(rel_tols)):
           if norm_div_norm_b < rel_tols[j]:
-            xs[j] = np.array(x, copy=True)
+            xs[j] = x.copy()
             if j > 0:
               rel_tols[j] = -1
 
-        if (norm < abs_tol) or (norm_div_norm_b < rel_tols[0]):
+        if (norm <= abs_tol) or (norm_div_norm_b < rel_tols[0]):
             break
 
         v = A.dot(p)
@@ -96,8 +117,7 @@ def conj_grad_solve(A, b, max_iter, abs_tol, rel_tols):
 
         x += lambd * p
         r -= lambd * v
-
-        z = A.cond(r)
+        z = Acond(r)
 
         new_alpha = np.dot(r, z)
         p *= new_alpha / alpha
@@ -105,13 +125,16 @@ def conj_grad_solve(A, b, max_iter, abs_tol, rel_tols):
 
         alpha = new_alpha
 
-    print "CG needed {}{}  iterations to reduce to {} {}".format(
+    print "CG needed {}{} iterations to reduce to {} {}".format(
             ("max=" if (i == max_iter) else  ""), i, la.norm(r),
               la.norm(r) / norm_b, norm_b)
 
     for j in [_j for _j in range(len(rel_tols)) if rel_tols[_j] != -1]:
-        xs[j] = np.array(x, copy=True)
-    return xs
+        xs[j] = x.copy()
+    if len(xs) == 1:
+        return xs[0]
+    else:
+        return xs
 
 
 def conj_grad_tall_solve(A, bs, max_iter, abs_tol, rel_tol):
@@ -139,9 +162,14 @@ def conj_grad_tall_solve(A, bs, max_iter, abs_tol, rel_tol):
     ///   be reduced to one hundreth of its initial value.
     """
 
+    if hasattr(A, "cond"):
+        Acond = A.cond
+    else:
+        Acond = lambda x: x.copy()
+
     xs = np.zeros_like(bs)
     rs = bs - A.dot(xs)
-    ps = A.cond(rs)
+    ps = Acond(rs)
     alphas = np.einsum('ij,ij->j', rs, ps)
     norms_b = np.asarray([la.norm(b) for b in bs.T])
     print norms_b
@@ -163,7 +191,7 @@ def conj_grad_tall_solve(A, bs, max_iter, abs_tol, rel_tol):
         xs += lambds * ps
         rs -= lambds * vs
 
-        zs = A.cond(rs)
+        zs = Acond(rs)
 
         new_alphas = np.einsum('ij,ij->j', rs, zs)
         ps += new_alphas / alphas
@@ -188,13 +216,11 @@ def _test():
     print A
     b = np.random.rand(5)
     b_tall = np.random.rand(5, 4)
-    An = nocond_wrapper(A)
-    Aj = jacobi_wrapper(A)
+    Aj = JacobiCGWrapper(A)
     print la.cond(A)
-    print conj_grad_solve(An, b, 100, 0, 1e-20)
-    print conj_grad_solve(An, b, 100, 0, [1e-20, 1e-1, 0.9])
+    print conj_grad_solve(A, b, 100, 0, 1e-20)
+    print conj_grad_solve(A, b, 100, 0, [1e-20, 1e-1, 0.9])
     print conj_grad_solve(Aj, b, 100, 0, [1e-20, 1e-1, 0.9])
-    print conj_grad_tall_solve(An, b_tall, -1, 0, 1e-20)
+    print conj_grad_tall_solve(A, b_tall, -1, 0, 1e-20)
     print conj_grad_tall_solve(Aj, b_tall, -1, 0, 1e-20)
-
-_test()
+#_test()
