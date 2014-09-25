@@ -55,7 +55,64 @@ class AT_dot_A_plus_lambda_I_CGWrapper(object):
         return (self._A.shape[1], self._A.shape[1])
 
 
-def conj_grad_solve(A, b, max_iter, abs_tol, rel_tols):
+class TTWrapper(object):
+    def __init__(self, A, B, lambd):
+        self._A = A
+        self._B = B
+        self._lambda = lambd
+
+    def dot(self, x):
+        return self._A.T.dot(self._A.dot(x)) + self._lambda * self._B.T.dot(self._B.dot(x))
+
+    def cond(self, x):
+        return x.copy()
+
+    @property
+    def shape(self):
+        return (self._A.shape[1], self._A.shape[1])
+
+
+class MatrixMultFunctor(object):
+    def __init__(self, A, B, a=1):
+        self._A, self._B, self._a = A, B, a
+        assert self._A.shape[1] == self._B.shape[0]
+
+    def dot(self, x):
+        return self._a * self._A.dot(self._B.dot(x))
+
+    @property
+    def shape(self):
+        return (self._A.shape[0], self._B.shape[1])
+
+
+class MatrixPlusFunctor(object):
+    def __init__(self, A, B, a=1, b=1):
+        self._A, self._B, self._a, self._b = A, B, a, b
+        assert self._A.shape == self._B.shape
+
+    def dot(self, x):
+        return self._a * self._A.dot(x) + self._b * self._B.dot(x)
+
+    @property
+    def shape(self):
+        return (self._A.shape[0], self._A.shape[1])
+
+
+class FunctionFunctor(object):
+    def __init__(self, F, (n, m), a=1):
+        self._F = F
+        self._shape = (n, m)
+        self._a = a
+
+    def dot(self, x):
+        return self._a * self._F(x)
+
+    @property
+    def shape(self):
+        return self._shape
+
+
+def conj_grad_solve(A, b, max_iter, abs_tol, rel_tols, verbose=False, initial_guess=None):
     """
     /// Simple implementation of preconditioned conjugate gradient method
     ///
@@ -89,7 +146,10 @@ def conj_grad_solve(A, b, max_iter, abs_tol, rel_tols):
     else:
         Acond = lambda x: x.copy()
 
-    x = np.zeros_like(b)
+    if initial_guess is None:
+        x = np.zeros_like(b)
+    else:
+        x = initial_guess.copy()
     r = b - A.dot(x)
     p = Acond(r)
     alpha = np.dot(r, p)
@@ -125,7 +185,8 @@ def conj_grad_solve(A, b, max_iter, abs_tol, rel_tols):
 
         alpha = new_alpha
 
-    print "CG needed {}{} iterations to reduce to {} {}".format(
+    if verbose:
+        print "CG needed {}{} iterations to reduce to {} {}".format(
             ("max=" if (i == max_iter) else  ""), i, la.norm(r),
               la.norm(r) / norm_b, norm_b)
 
@@ -137,7 +198,7 @@ def conj_grad_solve(A, b, max_iter, abs_tol, rel_tols):
         return xs
 
 
-def conj_grad_tall_solve(A, bs, max_iter, abs_tol, rel_tol):
+def conj_grad_tall_solve(A, bs, max_iter, abs_tol, rel_tol, verbose=False):
     """
     /// Simple implementation of preconditioned conjugate gradient method
     ///
@@ -172,7 +233,6 @@ def conj_grad_tall_solve(A, bs, max_iter, abs_tol, rel_tol):
     ps = Acond(rs)
     alphas = np.einsum('ij,ij->j', rs, ps)
     norms_b = np.asarray([la.norm(b) for b in bs.T])
-    print norms_b
 
     if max_iter < 1:
         max_iter = A.shape[0]
@@ -200,7 +260,8 @@ def conj_grad_tall_solve(A, bs, max_iter, abs_tol, rel_tol):
         alphas = new_alphas
         alphas[alphas == 0] = 1
 
-    print "CG needed {}{}  iterations to reduce to {} {}".format(
+    if verbose:
+        print "CG needed {}{}  iterations to reduce to {} {}".format(
             ("max=" if (i == max_iter) else  ""), i, la.norm(rs),
               np.asarray([la.norm(r) for r in rs.T]) / norms_b, norms_b)
 

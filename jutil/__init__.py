@@ -1,3 +1,4 @@
 from . import norms
-from . import cg2
-from . import quasinewton
+from . import cg
+from . import minimizer
+from . import splitbregman

@@ -29,9 +29,9 @@ class Minimizer(object):
 
     def printInfo(self, it, J, disq, normb):
         print "it= {it} / chi^2/m= {chisq} (meas= {chisqm} / apr= {chisqa} ) / d_i^2/n= {disq} / |J'|= {normb} / Q= {prob}".format(
-                it=it, chisq=J.getLastChisq(), chisqm=J.getLastChisqM(),
-                chisqa=J.getLastChisqA(), disq=disq, normb=normb,
-                prob=getChiSquareProbability(J.getLastChisq() * J.m, J.m))
+                it=it, chisq=J.chisq, chisqm=J.chisq_m,
+                chisqa=J.chisq_a, disq=disq, normb=normb,
+                prob=getChiSquareProbability(J.chisq * J.m, J.m))
 
 
     def __call__(self, J, x_0):
@@ -58,22 +58,22 @@ class Minimizer(object):
 
             self.printInfo(it, J, disq, la.norm(b))
 
-            chisq_old = J.getLastChisq()
+            chisq_old = J.chisq
             x_step = self._stepper(J, b, x_i)
             if np.any(np.isnan(x_step)):
                 raise RuntimeError("Retrieval failed (x_step is NaN)! " + repr(x_step))
 
             x_i += x_step
-            chisq = J.getLastChisq()
             it += 1
 
+            chisq = J.chisq
             assert chisq <= chisq_old
 
             # normalize step size in state space
             disq = np.dot(x_step, b) / J.n
 
             # Discrepancy principle
-            dp_reached = (np.sqrt(J.getLastChisqM() * J.m) <
+            dp_reached = (np.sqrt(J.chisq_m * J.m) <
                           self.conv_discrepancy_principle_tau *
                           np.sqrt(J.m))
 
@@ -95,7 +95,6 @@ class Minimizer(object):
 
         return x_i
 
-  # ****************************************************************************
 
 class LevenbergMarquardtStepper(object):
     def __init__(self, lmpar, factor,
@@ -111,7 +110,7 @@ class LevenbergMarquardtStepper(object):
         self._lmpar = self.self._lmpar_init
 
     def __call__(self, J, b, x_i):
-        chisq_old = J.getLastChisq()
+        chisq_old = J.chisq
         while True:
             # Solve J''(x_i) x_step = J'(x_i)
             x_step = cg.conj_grad_solve(cg.CostFunctionCGWrapper(J, x_i, lmpar=self._lmpar), b,
@@ -137,7 +136,7 @@ class SteepestDescentStepper(object):
         pass
 
     def __call__(self, J, b, x_i):
-        chisq_old = J.getLastChisq()
+        chisq_old = J.chisq
         check, chisq, x_new = lnsrch(x_i, chisq_old, -b, b, J)
         x_step = x_new - x_i
 
@@ -149,7 +148,7 @@ class ScaledSteepestDescentStepper(object):
         pass
 
     def __call__(self, J, b, x_i):
-        chisq_old = J.getLastChisq()
+        chisq_old = J.chisq
         direc = (np.dot(b, b) / np.dot(J.hess_dot(x_i, b), b)) * b
         check, chisq, x_new = lnsrch(x_i, chisq_old, -b, direc, J)
 
@@ -165,7 +164,7 @@ class GaussNewtonStepper(object):
         self._cg_err_abs = cg_err_abs
 
     def __call__(self, J, b, x_i):
-        chisq_old = J.getLastChisq()
+        chisq_old = J.chisq
         # Solve J''(x_i) x_step = J'(x_i)
         x_step = cg.conj_grad_solve(cg.CostFunctionCGWrapper(J, x_i), b,
                                     self._cg_max_it, self._cg_err_abs, self._cg_err_rel)
@@ -188,7 +187,7 @@ class TruncatedQuasiNewtonStepper(object):
         self._conv_rel = self._conv_rel_init
 
     def __call__(self, J, b, x_i):
-        chisq_old = J.getLastChisq()
+        chisq_old = J.chisq
         assert chisq_old > 0
 
         err_rels = [self._conv_rel]
