@@ -5,7 +5,7 @@ class JacobiMatrixOperator(object):
     def __init__(self, A):
         assert A.shape[0] == A.shape[1]
         self._A = A
-        self._diagonal = np.diag(A)
+        self._diagonal = np.diag(A).copy()
         nonzero = self._diagonal != 0
         self._diagonal[nonzero] = 1. / self._diagonal[nonzero]
 

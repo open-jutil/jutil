@@ -47,7 +47,7 @@ class Minimizer(object):
 
             b = -J.jac(x_i)
 
-            if la.norm(b) / J.m < self.conv_min_costfunction_gradient:
+            if la.norm(b) / J.m <= self.conv_min_costfunction_gradient:
                 print "Convergence criteria reached (dfmin)"
                 break
 

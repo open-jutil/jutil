@@ -40,6 +40,8 @@ def conj_grad_solve(A, b, max_iter, abs_tol, rel_tols, verbose=False, initial_gu
         x = np.zeros_like(b)
     else:
         x = initial_guess.copy()
+    print x, b.shape, A.dot(x).shape, b-A.dot(x)
+
     r = b - A.dot(x)
     p = A_cond(r)
     alpha = np.dot(r, p)
@@ -140,11 +142,10 @@ def conj_grad_tall_solve(A, bs, max_iter, abs_tol, rel_tol, verbose=False):
 
         xs += lambds * ps
         rs -= lambds * vs
-
         zs = A_cond(rs)
 
         new_alphas = np.einsum('ij,ij->j', rs, zs)
-        ps += new_alphas / alphas
+        ps *= new_alphas / alphas
         ps += zs
 
         alphas = new_alphas
@@ -156,23 +157,3 @@ def conj_grad_tall_solve(A, bs, max_iter, abs_tol, rel_tol, verbose=False):
             np.asarray([la.norm(r) for r in rs.T]) / norms_b, norms_b)
 
     return xs
-
-
-def _test():
-    import jutil.operator
-    A = np.random.rand(5, 5)
-    A = A.T.dot(A)
-    print A
-    for i in range(5):
-        A[i, i] += 1 + i ** 15
-    print A
-    b = np.random.rand(5)
-    b_tall = np.random.rand(5, 4)
-    Aj = jutil.operator.JacobiMatrixOperator(A)
-    print la.cond(A)
-    print conj_grad_solve(A, b, 100, 0, 1e-20)
-    print conj_grad_solve(A, b, 100, 0, [1e-20, 1e-1, 0.9])
-    print conj_grad_solve(Aj, b, 100, 0, [1e-20, 1e-1, 0.9])
-    print conj_grad_tall_solve(A, b_tall, -1, 0, 1e-20)
-    print conj_grad_tall_solve(Aj, b_tall, -1, 0, 1e-20)
-#_test()
