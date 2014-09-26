@@ -223,18 +223,9 @@ def split_bregman_2d_test(image_t, image, ig=None, weight=100, it_max=300, mu=0.
 
     x = cg.conj_grad_solve(ATA_DTD, A.T.dot(image), 300, 1e-40, 1e-40, verbose=True)
     print la.norm(x-image_t)
-    """
-    pylab.subplot(2, 1, 1)
-    pylab.pcolor(x.reshape(256, 256), vmin=0, vmax=256)
-    pylab.subplot(2, 1, 2)
-    pylab.pcolor(image_t.reshape(256, 256), vmin=0, vmax=256)
-    pylab.savefig("test.png")
-    exit()
-    """
 
     b = np.zeros(2 * n)
     d = b
-    u = x.copy()
     u = np.zeros_like(x)
 
     def printInfo(xx):
