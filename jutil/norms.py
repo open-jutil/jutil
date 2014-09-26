@@ -43,6 +43,27 @@ class Ekblom(BaseNorm):
     def hess_dot(self, x, vec):
         return self.hess_diag(x) * vec
 
+class BiSquared(BaseNorm):
+    def __init__(self, k):
+        self._k = k
+
+    def __call__(self, x):
+        return np.sum(np.where(np.abs(x) <= self._k, 1. - (1. - (x / self._k) ** 2) ** 3, np.ones_like(x)))
+
+    def jac(self, x):
+        return np.where(np.abs(x) <= self._k,
+            3. * ((1. - (x / self._k) ** 2) ** 2) * 2 * (x / (self._k ** 2)),
+            np.zeros_like(x))
+
+    def hess_diag(self, x):
+        return np.where(np.abs(x) <= self._k,
+            - 6. * (1. - (x / self._k) ** 2) *  ((2 * (x / (self._k ** 2))) ** 2) +
+            3. * ((1. - ((x / self._k) ** 2)) ** 2) * 2 * (1 / (self._k ** 2)),
+            np.zeros_like(x))
+
+    def hess_dot(self, x, vec):
+        return self.hess_diag(x) * vec
+
 
 class WeightedTVNorm(object):
     def __init__(self, basenorm, weight, indices):
@@ -139,29 +160,6 @@ class WeightedTVNorm(object):
 
         temp = sgSxT_dot_ddfgSx_dot_dgSx_dot_Svec + ddgSxT_dot_dfgSx_dot_Svec
         return temp#self._weight.T.dot(temp)
-
-
-
-class BiSquared(BaseNorm):
-    def __init__(self, k):
-        self._k = k
-
-    def __call__(self, x):
-        return np.sum(np.where(np.abs(x) <= self._k, 1. - (1. - (x / self._k) ** 2) ** 3, np.ones_like(x)))
-
-    def jac(self, x):
-        return np.where(np.abs(x) <= self._k,
-            3. * ((1. - (x / self._k) ** 2) ** 2) * 2 * (x / (self._k ** 2)),
-            np.zeros_like(x))
-
-    def hess_diag(self, x):
-        return np.where(np.abs(x) <= self._k,
-            - 6. * (1. - (x / self._k) ** 2) *  ((2 * (x / (self._k ** 2))) ** 2) +
-            3. * ((1. - ((x / self._k) ** 2)) ** 2) * 2 * (1 / (self._k ** 2)),
-            np.zeros_like(x))
-
-    def hess_dot(self, x, vec):
-        return self.hess_diag(x) * vec
 
 
 class NormL2Square(object):
@@ -355,4 +353,3 @@ def _test2():
         base = np.zeros(4)
         base[i] = 1
         print "h,", norm.hess_dot(x, base)
-#_test2()

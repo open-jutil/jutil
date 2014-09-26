@@ -2,139 +2,29 @@ import numpy as np
 import numpy.linalg as la
 
 
-
-class JacobiCGWrapper(object):
-    def __init__(self, A):
-        assert A.shape[0] == A.shape[1]
-        self._A = A
-        self._diagonal = np.diag(A)
-        nonzero = self._diagonal != 0
-        self._diagonal[nonzero] = 1. / self._diagonal[nonzero]
-
-    def dot(self, x):
-        return self._A.dot(x)
-
-    def cond(self, x):
-        return (self._diagonal * x.T).T
-
-    @property
-    def shape(self):
-        return self._A.shape
-
-
-class CostFunctionCGWrapper(object):
-    def __init__(self, J, x, lmpar=0):
-        self._J = J
-        self._x = x
-        self._lmpar = lmpar
-
-    def dot(self, vec):
-        return self._J.hess_dot(self._x, vec) + self._lmpar * vec
-
-    def cond(self, vec):
-        return vec.copy() * (1. + self._lmpar)
-
-    @property
-    def shape(self):
-        return (self._J.n, self._J.n)
-
-
-class AT_dot_A_plus_lambda_I_CGWrapper(object):
-    def __init__(self, A, lambd):
-        self._A = A
-        self._lambda = lambd
-
-    def dot(self, x):
-        return self._A.T.dot(self._A.dot(x)) + self._lambda * x
-
-    def cond(self, x):
-        return x.copy()
-
-    @property
-    def shape(self):
-        return (self._A.shape[1], self._A.shape[1])
-
-
-class TTWrapper(object):
-    def __init__(self, A, B, lambd):
-        self._A = A
-        self._B = B
-        self._lambda = lambd
-
-    def dot(self, x):
-        return self._A.T.dot(self._A.dot(x)) + self._lambda * self._B.T.dot(self._B.dot(x))
-
-    def cond(self, x):
-        return x.copy()
-
-    @property
-    def shape(self):
-        return (self._A.shape[1], self._A.shape[1])
-
-
-class MatrixMultFunctor(object):
-    def __init__(self, A, B, a=1):
-        self._A, self._B, self._a = A, B, a
-        assert self._A.shape[1] == self._B.shape[0]
-
-    def dot(self, x):
-        return self._a * self._A.dot(self._B.dot(x))
-
-    @property
-    def shape(self):
-        return (self._A.shape[0], self._B.shape[1])
-
-
-class MatrixPlusFunctor(object):
-    def __init__(self, A, B, a=1, b=1):
-        self._A, self._B, self._a, self._b = A, B, a, b
-        assert self._A.shape == self._B.shape
-
-    def dot(self, x):
-        return self._a * self._A.dot(x) + self._b * self._B.dot(x)
-
-    @property
-    def shape(self):
-        return (self._A.shape[0], self._A.shape[1])
-
-
-class FunctionFunctor(object):
-    def __init__(self, F, (n, m), a=1):
-        self._F = F
-        self._shape = (n, m)
-        self._a = a
-
-    def dot(self, x):
-        return self._a * self._F(x)
-
-    @property
-    def shape(self):
-        return self._shape
-
-
 def conj_grad_solve(A, b, max_iter, abs_tol, rel_tols, verbose=False, initial_guess=None):
     """
-    /// Simple implementation of preconditioned conjugate gradient method
-    ///
-    /// See A. Meister "Numerik linearer Gleichungssysteme", p. 218f
-    ///
-    /// Compared to the un-preconditioned CG method, this needs memory for an
-    /// additional Vector and uses an additional scalar-product and one
-    /// Matrix-Vector product per iteration.
-    ///
-    /// \param A is a functor defining the matrix, realising the mult() function
-    ///   for supplying a vector to be multiplied returning the result, a cond()
-    ///   function for supplying a vector and multiplying it with an approximate
-    ///   inversion and size1()/size2() functions returning its dimensions
-    /// \param b is the RHS of the lineqr equation system
-    /// \param x gives the initial guess and returns the result of the method
-    /// \param max_iter determines the maximum number of iterations.
-    /// \param abs_tol determines the tolerance for the remaining
-    ///   residuum. The algorithm will terminate if ||Ax - b||_2 / ||b||_2 < abs_tol.
-    /// \param rel_tol determines the expected residual reduction. The
-    ///   algorithm will terminate when ||Ax_0 - b||_2 / ||Ax - b||_2 < rel_tol.
-    ///   By specifying red_tol to be, say 1e-2, one requires the residuum to
-    ///   be reduced to one hundreth of its initial value.
+    Simple implementation of preconditioned conjugate gradient method
+
+    See A. Meister "Numerik linearer Gleichungssysteme", p. 218f
+
+    Compared to the un-preconditioned CG method, this needs memory for an
+    additional Vector and uses an additional scalar-product and one
+    Matrix-Vector product per iteration.
+
+    \param A is a functor defining the matrix, realising the mult() function
+      for supplying a vector to be multiplied returning the result, a cond()
+      function for supplying a vector and multiplying it with an approximate
+      inversion and size1()/size2() functions returning its dimensions
+    \param b is the RHS of the lineqr equation system
+    \param x gives the initial guess and returns the result of the method
+    \param max_iter determines the maximum number of iterations.
+    \param abs_tol determines the tolerance for the remaining
+      residuum. The algorithm will terminate if ||Ax - b||_2 / ||b||_2 < abs_tol.
+    \param rel_tol determines the expected residual reduction. The
+      algorithm will terminate when ||Ax_0 - b||_2 / ||Ax - b||_2 < rel_tol.
+      By specifying red_tol to be, say 1e-2, one requires the residuum to
+      be reduced to one hundreth of its initial value.
     """
 
     rel_tols = np.array(rel_tols, copy=True).reshape(-1)
@@ -142,16 +32,16 @@ def conj_grad_solve(A, b, max_iter, abs_tol, rel_tols, verbose=False, initial_gu
     assert np.all(np.diff(rel_tols) > 0)
 
     if hasattr(A, "cond"):
-        Acond = A.cond
+        A_cond = A.cond
     else:
-        Acond = lambda x: x.copy()
+        A_cond = lambda x: x.copy()
 
     if initial_guess is None:
         x = np.zeros_like(b)
     else:
         x = initial_guess.copy()
     r = b - A.dot(x)
-    p = Acond(r)
+    p = A_cond(r)
     alpha = np.dot(r, p)
     norm_b = la.norm(b)
     xs = [0 for _ in xrange(len(rel_tols))]
@@ -163,21 +53,21 @@ def conj_grad_solve(A, b, max_iter, abs_tol, rel_tols, verbose=False, initial_gu
         norm = la.norm(r)
         norm_div_norm_b = norm / norm_b
         for j in xrange(len(rel_tols)):
-          if norm_div_norm_b < rel_tols[j]:
-            xs[j] = x.copy()
-            if j > 0:
-              rel_tols[j] = -1
+            if norm_div_norm_b < rel_tols[j]:
+                xs[j] = x.copy()
+                if j > 0:
+                    rel_tols[j] = -1
 
         if (norm <= abs_tol) or (norm_div_norm_b < rel_tols[0]):
             break
 
         v = A.dot(p)
-        lambd = alpha / np.dot(v, p);
+        lambd = alpha / np.dot(v, p)
         assert not np.isnan(lambd)
 
         x += lambd * p
         r -= lambd * v
-        z = Acond(r)
+        z = A_cond(r)
 
         new_alpha = np.dot(r, z)
         p *= new_alpha / alpha
@@ -187,8 +77,8 @@ def conj_grad_solve(A, b, max_iter, abs_tol, rel_tols, verbose=False, initial_gu
 
     if verbose:
         print "CG needed {}{} iterations to reduce to {} {}".format(
-            ("max=" if (i == max_iter) else  ""), i, la.norm(r),
-              la.norm(r) / norm_b, norm_b)
+            ("max=" if (i == max_iter) else ""), i, la.norm(r),
+            la.norm(r) / norm_b, norm_b)
 
     for j in [_j for _j in range(len(rel_tols)) if rel_tols[_j] != -1]:
         xs[j] = x.copy()
@@ -200,37 +90,37 @@ def conj_grad_solve(A, b, max_iter, abs_tol, rel_tols, verbose=False, initial_gu
 
 def conj_grad_tall_solve(A, bs, max_iter, abs_tol, rel_tol, verbose=False):
     """
-    /// Simple implementation of preconditioned conjugate gradient method
-    ///
-    /// See A. Meister "Numerik linearer Gleichungssysteme", p. 218f
-    ///
-    /// Compared to the un-preconditioned CG method, this needs memory for an
-    /// additional Vector and uses an additional scalar-product and one
-    /// Matrix-Vector product per iteration.
-    ///
-    /// \param A is a functor defining the matrix, realising the mult() function
-    ///   for supplying a vector to be multiplied returning the result, a cond()
-    ///   function for supplying a vector and multiplying it with an approximate
-    ///   inversion and size1()/size2() functions returning its dimensions
-    /// \param b is the RHS of the lineqr equation system
-    /// \param x gives the initial guess and returns the result of the method
-    /// \param max_iter determines the maximum number of iterations.
-    /// \param abs_tol determines the tolerance for the remaining
-    ///   residuum. The algorithm will terminate if ||Ax - b||_2 / ||b||_2 < abs_tol.
-    /// \param rel_tol determines the expected residual reduction. The
-    ///   algorithm will terminate when ||Ax_0 - b||_2 / ||Ax - b||_2 < rel_tol.
-    ///   By specifying red_tol to be, say 1e-2, one requires the residuum to
-    ///   be reduced to one hundreth of its initial value.
+    Simple implementation of preconditioned conjugate gradient method
+
+    See A. Meister "Numerik linearer Gleichungssysteme", p. 218f
+
+    Compared to the un-preconditioned CG method, this needs memory for an
+    additional Vector and uses an additional scalar-product and one
+    Matrix-Vector product per iteration.
+
+    \param A is a functor defining the matrix, realising the mult() function
+      for supplying a vector to be multiplied returning the result, a cond()
+      function for supplying a vector and multiplying it with an approximate
+      inversion and size1()/size2() functions returning its dimensions
+    \param b is the RHS of the lineqr equation system
+    \param x gives the initial guess and returns the result of the method
+    \param max_iter determines the maximum number of iterations.
+    \param abs_tol determines the tolerance for the remaining
+      residuum. The algorithm will terminate if ||Ax - b||_2 / ||b||_2 < abs_tol.
+    \param rel_tol determines the expected residual reduction. The
+      algorithm will terminate when ||Ax_0 - b||_2 / ||Ax - b||_2 < rel_tol.
+      By specifying red_tol to be, say 1e-2, one requires the residuum to
+      be reduced to one hundreth of its initial value.
     """
 
     if hasattr(A, "cond"):
-        Acond = A.cond
+        A_cond = A.cond
     else:
-        Acond = lambda x: x.copy()
+        A_cond = lambda x: x.copy()
 
     xs = np.zeros_like(bs)
     rs = bs - A.dot(xs)
-    ps = Acond(rs)
+    ps = A_cond(rs)
     alphas = np.einsum('ij,ij->j', rs, ps)
     norms_b = np.asarray([la.norm(b) for b in bs.T])
 
@@ -251,7 +141,7 @@ def conj_grad_tall_solve(A, bs, max_iter, abs_tol, rel_tol, verbose=False):
         xs += lambds * ps
         rs -= lambds * vs
 
-        zs = Acond(rs)
+        zs = A_cond(rs)
 
         new_alphas = np.einsum('ij,ij->j', rs, zs)
         ps += new_alphas / alphas
@@ -263,12 +153,13 @@ def conj_grad_tall_solve(A, bs, max_iter, abs_tol, rel_tol, verbose=False):
     if verbose:
         print "CG needed {}{}  iterations to reduce to {} {}".format(
             ("max=" if (i == max_iter) else  ""), i, la.norm(rs),
-              np.asarray([la.norm(r) for r in rs.T]) / norms_b, norms_b)
+            np.asarray([la.norm(r) for r in rs.T]) / norms_b, norms_b)
 
     return xs
 
 
 def _test():
+    import jutil.operator
     A = np.random.rand(5, 5)
     A = A.T.dot(A)
     print A
@@ -277,7 +168,7 @@ def _test():
     print A
     b = np.random.rand(5)
     b_tall = np.random.rand(5, 4)
-    Aj = JacobiCGWrapper(A)
+    Aj = jutil.operator.JacobiMatrixOperator(A)
     print la.cond(A)
     print conj_grad_solve(A, b, 100, 0, 1e-20)
     print conj_grad_solve(A, b, 100, 0, [1e-20, 1e-1, 0.9])

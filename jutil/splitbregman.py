@@ -1,16 +1,10 @@
-import minimizer
 import numpy as np
 import numpy.linalg as la
 
 
 def split_bregman_2d(AT, A, D, y, weight=100, it_max=300, mu=0.01, lambd=1, tol=1e-6, isotropic=True):
-    import scipy.sparse
-    import cg
-    import itertools
-    import norms
-    from lnsrch import lnsrch
-    import pylab
-
+    import jutil.cg as cg
+    import jutil.operator as op
     m = len(y)
     n = A.shape[1]
 
@@ -18,20 +12,20 @@ def split_bregman_2d(AT, A, D, y, weight=100, it_max=300, mu=0.01, lambd=1, tol=
     d = b
     u = np.zeros(n)
 
-    ATA = cg.MatrixMultFunctor(AT, A, a=(mu / lambd))
-    DTD = cg.MatrixMultFunctor(D.T, D)
-    ATA_DTD = cg.MatrixPlusFunctor(ATA, DTD)
+    ATA = op.Dot(AT, A, a=(mu / lambd))
+    DTD = op.Dot(D.T, D)
+    ATA_DTD = op.Plus(ATA, DTD)
 
-    def printInfo(xx):
+    def print_info(vector):
         if not (it % 5 == 0 or it == 1):
             return
-        dy = A.dot(xx) - y
+        dy = A.dot(vector) - y
         chisq_m = np.dot(dy, dy) / m
-        chisq_a = (weight / mu) * sum(np.hypot(*np.split(D.dot(xx), 2))) / m
+        chisq_a = (weight / mu) * sum(np.hypot(*np.split(D.dot(vector), 2))) / m
         chisq = chisq_m + chisq_a
         print "it= {it} / chi^2/m= {chisq} (meas= {chisqm} / apr= {chisqa} ) / {err}".format(
-               it=it, chisq=chisq, chisqm=chisq_m,
-               chisqa=chisq_a, err=error)
+                it=it, chisq=chisq, chisqm=chisq_m,
+                chisqa=chisq_a, err=error)
 
     it, error = 0, 0
     while True:
@@ -55,13 +49,13 @@ def split_bregman_2d(AT, A, D, y, weight=100, it_max=300, mu=0.01, lambd=1, tol=
             temp = np.maximum(s - weight / lambd, 0)
             d = (temp * D_dot_u_plus_b.reshape(2, -1) / s_prime).reshape(-1)
 
-        else: # anisotropic
+        else:  # anisotropic
             temp = np.maximum(np.abs(D_dot_u_plus_b) - weight / lambd, 0)
             d = temp * np.sign(D_dot_u_plus_b)
         b = D_dot_u_plus_b - d
 
         error = la.norm(u_last - u) / la.norm(u)
-        printInfo(u)
+        print_info(u)
         if error < tol or it > it_max:
             break
 
@@ -70,10 +64,8 @@ def split_bregman_2d(AT, A, D, y, weight=100, it_max=300, mu=0.01, lambd=1, tol=
 
 def split_bregman_2d_image(image, ig=None, weight=50, it_max=400, mu=5, lambd=1, tol=1e-6, isotropic=True):
     import scipy.sparse
-    import cg
-    import itertools
-    import norms
-    from lnsrch import lnsrch
+    import jutil.cg as cg
+    from jutil.lnsrch import lnsrch
 
     n = image.shape[0] * image.shape[1]
     n_root = image.shape[0]
@@ -97,7 +89,7 @@ def split_bregman_2d_image(image, ig=None, weight=50, it_max=400, mu=5, lambd=1,
     else:
         u = image
 
-    def printInfo():
+    def print_info():
         if it % 5 != 0:
             return
         dy = u - image
@@ -109,7 +101,7 @@ def split_bregman_2d_image(image, ig=None, weight=50, it_max=400, mu=5, lambd=1,
                chisqa=chisq_a, err=error)
 
     it, error = 0, 0
-    printInfo()
+    print_info()
     while True:
         u_last = u
 
@@ -136,13 +128,13 @@ def split_bregman_2d_image(image, ig=None, weight=50, it_max=400, mu=5, lambd=1,
         b = D_dot_u_plus_b - d
 
         error = la.norm(u_last - u) / la.norm(u)
-        printInfo()
+        print_info()
         if error < tol or it > it_max:
             break
     return u.reshape(n_root, n_root)
 
 
-def tv_denoise_2d(image, weight=50, eps=2.e-4, keep_type=False):
+def tv_denoise_2d(image, weight=50, eps=2e-4, keep_type=False):
     px = np.zeros_like(image)
     py = np.zeros_like(image)
     gx = np.zeros_like(image)
@@ -159,13 +151,13 @@ def tv_denoise_2d(image, weight=50, eps=2.e-4, keep_type=False):
         E = (d**2).sum()
         gx[:-1] = np.diff(out, axis=0)
         gy[:, :-1] = np.diff(out, axis=1)
-        norm = np.sqrt(gx**2 + gy**2)
+        norm = np.hypot(gx, gy)
         E += weight * norm.sum()
         norm *= 0.5 / weight
         norm += 1
-        px -= 0.25*gx
+        px -= 0.25 * gx
         px /= norm
-        py -= 0.25*gy
+        py -= 0.25 * gy
         py /= norm
         E /= float(image.size)
         if i == 0:
