@@ -13,8 +13,7 @@ def split_bregman_2d(AT, A, D, y, weight=100, it_max=300, mu=0.01, lambd=1, tol=
     u = np.zeros(n)
 
     ATA = op.Dot(AT, A, a=(mu / lambd))
-    DTD = op.Dot(D.T, D)
-    ATA_DTD = op.Plus(ATA, DTD)
+    ATA_DTD = op.Plus(ATA, op.Dot(D.T, D))
 
     def print_info(vector):
         if not (it % 5 == 0 or it == 1):
@@ -27,8 +26,8 @@ def split_bregman_2d(AT, A, D, y, weight=100, it_max=300, mu=0.01, lambd=1, tol=
                 it=it, chisq=chisq, chisqm=chisq_m,
                 chisqa=chisq_a, err=error)
 
-    it, error = 0, 0
-    while True:
+    it, error = 0, np.inf
+    while error > tol or it <= it_max:
         u_last = u
 
         rhs = (mu / lambd) * AT.dot(y) + D.T.dot(d - b)
@@ -38,7 +37,7 @@ def split_bregman_2d(AT, A, D, y, weight=100, it_max=300, mu=0.01, lambd=1, tol=
             rhs -= ATA_DTD.dot(u)
             u = u + (np.dot(rhs, rhs) / np.dot(ATA_DTD.dot(rhs), rhs)) * rhs
         else:
-            u = cg.conj_grad_solve(ATA_DTD, rhs, 200, 1e-20, 1e-20)
+            u = cg.conj_grad_solve(ATA_DTD, rhs, 100, 1e-20, 1e-20)
         it += 1
 
         D_dot_u_plus_b = D.dot(u) + b
@@ -56,8 +55,6 @@ def split_bregman_2d(AT, A, D, y, weight=100, it_max=300, mu=0.01, lambd=1, tol=
 
         error = la.norm(u_last - u) / la.norm(u)
         print_info(u)
-        if error < tol or it > it_max:
-            break
 
     return u
 
@@ -106,6 +103,7 @@ def split_bregman_2d_image(image, ig=None, weight=50, it_max=400, mu=5, lambd=1,
         u_last = u
 
         rhs = (mu / lambd) * image + D.T.dot(d - b)
+        DTD = op.Dot(D.T, D)
         DT_dot_D_plus_I = cg.AT_dot_A_plus_lambda_I_CGWrapper(D, (mu / lambd))
 
         # single CG step

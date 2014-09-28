@@ -8,9 +8,7 @@ class JacobiMatrixOperator(object):
         self._diagonal = np.diag(A).copy()
         nonzero = self._diagonal != 0
         self._diagonal[nonzero] = 1. / self._diagonal[nonzero]
-
-    def dot(self, x):
-        return self._A.dot(x)
+        self.dot = self._A.dot
 
     def cond(self, x):
         return (self._diagonal * x.T).T
@@ -46,11 +44,15 @@ class CostFunctionOperator(object):
 
 
 class Dot(object):
-    def __init__(self, A, B, a=1):
+    def __init__(self, A, B, a=1, adjoint=None):
         self._A, self._B, self._a = A, B, a
         self.dot = self._dot if a == 1 else self._dot_a
         assert self._A.shape[1] == self._B.shape[0]
-
+        if adjoint is None:
+            if hasattr(B, "T") and hasattr(A, "T"):
+                self.T = Dot(B.T, A.T, a=a, adjoint=self)
+        else:
+            self.T = adjoint
     def _dot(self, x):
         return self._A.dot(self._B.dot(x))
 
@@ -63,9 +65,14 @@ class Dot(object):
 
 
 class Plus(object):
-    def __init__(self, A, B):
+    def __init__(self, A, B, adjoint=None):
         self._A, self._B = A, B
         assert self._A.shape == self._B.shape
+        if adjoint is None:
+            if hasattr(B, "T") and hasattr(A, "T"):
+                 self.T = Plus(A.T, B.T, adjoint=self)
+        else:
+            self.T = adjoint
 
     def dot(self, x):
         return self._A.dot(x) + self._B.dot(x)
@@ -76,11 +83,16 @@ class Plus(object):
 
 
 class Function(object):
-    def __init__(self, F, (n, m), a=1):
+    def __init__(self, (n, m), F, FT=None, a=1, adjoint=None):
         self._F = F
         self._shape = (n, m)
         self._a = a
         self.dot = self._dot if a == 1 else self._dot_a
+        if adjoint is None:
+            if FT is not None:
+                self.T = Function((m, n), FT, a=a, adjoint=self)
+        else:
+            self.T = adjoint
 
     def _dot_a(self, x):
         return self._a * self._F(x)

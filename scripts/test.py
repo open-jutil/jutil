@@ -1,6 +1,6 @@
 import matplotlib
 matplotlib.use('Agg')
-import minimizer
+import jutil.minimizer as minimizer
 import numpy as np
 import numpy.linalg as la
 import pylab
@@ -76,7 +76,7 @@ class CostFunction(object):
 
 class CostFunctionImage(object):
     def __init__(self, p, lam):
-        import norms
+        import jutil.norms as norms
         import scipy.sparse
         self._y = self._y_t + 0.5 * self._y_t.std() * np.random.randn(*self._y_t.shape)
         self._lambda = lam
@@ -151,10 +151,11 @@ class CostFunctionSquares(CostFunctionImage):
 
 def split_bregman_2d_test(image_t, image, ig=None, weight=100, it_max=300, mu=0.01, lambd=1, tol=1e-6, isotropic=True):
     import scipy.sparse
-    import cg
+    import jutil.cg as cg
     import itertools
-    import norms
-    from lnsrch import lnsrch
+    import jutil.norms as norms
+    import jutil.operator as op
+    from jutil.lnsrch import lnsrch
     import pylab
 
     n = image.shape[0] * image.shape[1]
@@ -201,7 +202,6 @@ def split_bregman_2d_test(image_t, image, ig=None, weight=100, it_max=300, mu=0.
     for j in range(0, 256, 2):
         print i
         for k in range(0, 256, 4):
-
             delta = (k - j) / 256.
             cols = j + np.asarray(map(int, np.arange(256) * delta))
             assert min(cols) >= 0 and max(cols) <= 255, (k,j, delta, cols)
@@ -217,9 +217,7 @@ def split_bregman_2d_test(image_t, image, ig=None, weight=100, it_max=300, mu=0.
     image = image + 0.01 * image.std() * np.random.randn(*image.shape)
     print la.norm(image)
 
-    ATA = cg.MatrixMultFunctor(A.T, A)
-    DTD = cg.MatrixMultFunctor(D.T, D)
-    ATA_DTD = cg.MatrixPlusFunctor(ATA, DTD)
+    ATA_DTD = op.Plus(op.Dot(A.T, A), op.Dot(D.T, D))
 
     x = cg.conj_grad_solve(ATA_DTD, A.T.dot(image), 300, 1e-40, 1e-40, verbose=True)
     print la.norm(x-image_t)
@@ -246,9 +244,7 @@ def split_bregman_2d_test(image_t, image, ig=None, weight=100, it_max=300, mu=0.
         u_last = u
 
         rhs = (mu / lambd) * A.T.dot(image) + D.T.dot(d - b)
-        ATA = cg.MatrixMultFunctor(A.T, A, a=(mu / lambd))
-        DTD = cg.MatrixMultFunctor(D.T, D)
-        ATA_DTD = cg.MatrixPlusFunctor(ATA, DTD)
+        ATA_DTD = op.Plus(op.Dot(A.T, A, a=mu / lambd), op.Dot(D.T, D))
 
         # single CG step
         if it > 0:
