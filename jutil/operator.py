@@ -103,3 +103,44 @@ class Function(object):
     @property
     def shape(self):
         return self._shape
+
+
+class HStack(object):
+    def __init__(self, As, adjoint=None):
+        self._As = As
+        assert all([As[i].shape[0] == As[i - 1].shape[0] for i in range(1, len(As))])
+        self._split = np.cumsum([A.shape[1] for A in As])
+        self._shape = (As[0].shape[0], self._split[-1])
+        if adjoint is None:
+            if all([hasattr(A, "T") for A in As]):
+                 self.T = VStack([A.T for A in As], adjoint=self)
+        else:
+            self.T = adjoint
+
+    def dot(self, long_x):
+        return np.sum([A.dot(x) for A, x in zip(
+            self._As, np.split(long_x, self._split))], axis=0)
+
+    @property
+    def shape(self):
+        return self._shape
+
+
+class VStack(object):
+    def __init__(self, As, adjoint=None):
+        self._As = As
+        assert all([As[i].shape[1] == As[i - 1].shape[1] for i in range(1, len(As))])
+        self._shape = (sum([A.shape[0] for A in As]), As[0].shape[1])
+        if adjoint is None:
+            if all([hasattr(A, "T") for A in As]):
+                 self.T = HStack([A.T for A in As], adjoint=self)
+        else:
+            self.T = adjoint
+
+    def dot(self, x):
+        return np.concatenate([A.dot(x) for A in self._As])
+
+    @property
+    def shape(self):
+        return self._shape
+

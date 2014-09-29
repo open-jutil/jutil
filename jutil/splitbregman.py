@@ -2,7 +2,7 @@ import numpy as np
 import numpy.linalg as la
 
 
-def split_bregman_2d(AT, A, D, y, weight=100, it_max=300, mu=0.01, lambd=1, tol=1e-6, isotropic=True):
+def split_bregman_2d(A, D, y, weight=100, it_max=300, mu=0.01, lambd=1, tol=1e-6, isotropic=True):
     import jutil.cg as cg
     import jutil.operator as op
     m = len(y)
@@ -12,7 +12,7 @@ def split_bregman_2d(AT, A, D, y, weight=100, it_max=300, mu=0.01, lambd=1, tol=
     d = b
     u = np.zeros(n)
 
-    ATA = op.Dot(AT, A, a=(mu / lambd))
+    ATA = op.Dot(A.T, A, a=(mu / lambd))
     ATA_DTD = op.Plus(ATA, op.Dot(D.T, D))
 
     def print_info(vector):
@@ -30,7 +30,7 @@ def split_bregman_2d(AT, A, D, y, weight=100, it_max=300, mu=0.01, lambd=1, tol=
     while error > tol or it <= it_max:
         u_last = u
 
-        rhs = (mu / lambd) * AT.dot(y) + D.T.dot(d - b)
+        rhs = (mu / lambd) * A.T.dot(y) + D.T.dot(d - b)
 
         # single CG step
         if it > 0:
