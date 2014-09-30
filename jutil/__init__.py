@@ -5,3 +5,4 @@ from . import splitbregman
 from . import operator
 from . import lsqr
 from . import cgne
+from . import diff

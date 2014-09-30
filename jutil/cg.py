@@ -42,7 +42,6 @@ def conj_grad_solve(A, b,
         x = np.zeros_like(b)
     else:
         x = initial_guess.copy()
-    print x, b.shape, A.dot(x).shape, b-A.dot(x)
 
     r = b - A.dot(x)
     p = A_cond(r)
