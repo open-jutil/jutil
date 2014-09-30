@@ -2,9 +2,9 @@ import numpy as np
 import numpy.linalg as la
 
 
-def conj_grad_solve(A, b,
+def conj_grad_solve(A, b, P=None, x_0=None,
                     max_iter=-1, abs_tol=1e-20, rel_tol=1e-20,
-                    verbose=False, initial_guess=None):
+                    verbose=False):
     """
     Simple implementation of preconditioned conjugate gradient method
 
@@ -19,7 +19,7 @@ def conj_grad_solve(A, b,
       function for supplying a vector and multiplying it with an approximate
       inversion and size1()/size2() functions returning its dimensions
     \param b is the RHS of the lineqr equation system
-    \param x gives the initial guess and returns the result of the method
+    \param x_0 gives the initial guess
     \param max_iter determines the maximum number of iterations.
     \param abs_tol determines the tolerance for the remaining
       residuum. The algorithm will terminate if ||Ax - b||_2 / ||b||_2 < abs_tol.
@@ -33,18 +33,14 @@ def conj_grad_solve(A, b,
     assert len(rel_tol) > 0
     assert np.all(np.diff(rel_tol) > 0)
 
-    if hasattr(A, "cond"):
-        A_cond = A.cond
-    else:
-        A_cond = lambda x: x.copy()
+    if P is None:
+        from jutil.operator import Identity
+        P = Identity(A.shape[0])
 
-    if initial_guess is None:
-        x = np.zeros_like(b)
-    else:
-        x = initial_guess.copy()
+    x = x_0.copy() if x_0 is not None else np.zeros_like(b)
 
     r = b - A.dot(x)
-    p = A_cond(r)
+    p = P.dot(r)
     alpha = np.dot(r, p)
     norm_b = la.norm(b)
     xs = [0 for _ in xrange(len(rel_tol))]
@@ -70,7 +66,7 @@ def conj_grad_solve(A, b,
 
         x += lambd * p
         r -= lambd * v
-        z = A_cond(r)
+        z = P.dot(r)
 
         new_alpha = np.dot(r, z)
         p *= new_alpha / alpha
@@ -78,7 +74,7 @@ def conj_grad_solve(A, b,
 
         alpha = new_alpha
 
-    if verbose:
+#    if verbose:
         print "CG needed {}{} iterations to reduce to {} {}".format(
             ("max=" if (i == max_iter) else ""), i, la.norm(r),
             la.norm(r) / norm_b, norm_b)
@@ -91,7 +87,9 @@ def conj_grad_solve(A, b,
         return xs
 
 
-def conj_grad_tall_solve(A, bs, max_iter, abs_tol, rel_tol, verbose=False):
+def conj_grad_tall_solve(A, bs, P=None, x_0=None,
+                         max_iter=-1, abs_tol=1e-20, rel_tol=1e-20,
+                         verbose=False):
     """
     Simple implementation of preconditioned conjugate gradient method
 
@@ -116,14 +114,14 @@ def conj_grad_tall_solve(A, bs, max_iter, abs_tol, rel_tol, verbose=False):
       be reduced to one hundreth of its initial value.
     """
 
-    if hasattr(A, "cond"):
-        A_cond = A.cond
-    else:
-        A_cond = lambda x: x.copy()
+    if P is None:
+        from jutil.operator import Identity
+        P = Identity(A.shape[0])
 
-    xs = np.zeros_like(bs)
+    xs = x_0 if x_0 is not None else np.zeros_like(bs)
+
     rs = bs - A.dot(xs)
-    ps = A_cond(rs)
+    ps = P.dot(rs)
     alphas = np.einsum('ij,ij->j', rs, ps)
     norms_b = np.asarray([la.norm(b) for b in bs.T])
 
@@ -144,7 +142,7 @@ def conj_grad_tall_solve(A, bs, max_iter, abs_tol, rel_tol, verbose=False):
 
         xs += lambds * ps
         rs -= lambds * vs
-        zs = A_cond(rs)
+        zs = A.dot(rs)
 
         new_alphas = np.einsum('ij,ij->j', rs, zs)
         ps *= new_alphas / alphas

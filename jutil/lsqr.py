@@ -1,7 +1,7 @@
 import numpy as np
 import numpy.linalg as la
 
-def lsqr_solve(A, b,
+def lsqr_solve(A, b, P=None, x_0=None,
                max_iter=-1, abs_tol=1e-20, rel_tol=1e-20, rel_change_tol=1e-20,
                verbose=False):
     """
@@ -65,11 +65,9 @@ def lsqr_solve(A, b,
          pp. 195-209.
     """
 
-    if hasattr(A, "cond") and hasattr(A, "cond_inverse"):
-        A_cond = A.cond
-    else:
-        A_cond = lambda x : x.copy()
-        A_cond_inverse = lambda x: x.copy()
+    if P is None:
+        from jutil.operator import Identity
+        P = Identity(A.shape[0])
 
     phi_bar_old = 1e-40
 
@@ -77,7 +75,7 @@ def lsqr_solve(A, b,
     beta = la.norm(b)
     u = b / beta
     p = A.T.dot(u)
-    v = A_cond(p)
+    v = P.dot(p)
     alpha = la.norm(v)
     v /= alpha
     w = v.copy()
@@ -91,13 +89,13 @@ def lsqr_solve(A, b,
     i = 0
     while i < max_iter:
         # Continue bidiagonalization
-        p = A_cond(v)
+        p = P.dot(v)
         u = -alpha * u + A.dot(p)
         beta = la.norm(u)
         if beta > 0:
             u /= beta
             p = A.T.dot(u)
-            v = A_cond(p) - beta * v
+            v = P.dot(p) - beta * v
             alpha = la.norm(v)
             if alpha > 0:
                 v /= alpha;
@@ -117,7 +115,7 @@ def lsqr_solve(A, b,
         w = v - (theta / rho) * w
 
         # Test for convergence, phi_bar = ||r||
-        p = A_cond_inverse(-1.0 * phi_bar * alpha * c * v)
+        p = P.I.dot(-1.0 * phi_bar * alpha * c * v)
         norm_ATr = la.norm(p)
         rel_change = 100 * abs(1 - phi_bar / phi_bar_old)
 
@@ -129,7 +127,7 @@ def lsqr_solve(A, b,
         phi_bar_old = phi_bar
         i += 1
 
-    x = A_cond(x)
+    x = P.dot(x)
     if verbose:
         print "LSQR needed {}{} iterations to reduce to {} {} {} {}".format(
             ("max=" if (i == max_iter) else ""), i, phi_bar,

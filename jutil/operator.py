@@ -43,6 +43,20 @@ class CostFunctionOperator(object):
         return (self._J.n, self._J.n)
 
 
+class Identity(object):
+    def __init__(self, n):
+        self._shape = (n, n)
+        self.T = self
+        self.I = self
+
+    def dot(self, x):
+        return x.copy()
+
+    @property
+    def shape(self):
+        return self._shape
+
+
 class Dot(object):
     def __init__(self, A, B, a=1, adjoint=None):
         self._A, self._B, self._a = A, B, a

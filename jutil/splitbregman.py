@@ -3,17 +3,18 @@ import numpy.linalg as la
 
 
 def split_bregman_2d(A, D, y, weight=100, it_max=300, mu=0.01, lambd=1, tol=1e-6, isotropic=True):
-    import jutil.cg as cg
-    import jutil.operator as op
-    m = len(y)
-    n = A.shape[1]
+    from jutil.cg import conj_grad_solve
+    from jutil.operator import Plus, Dot
+
+    m, n = A.shape
+    assert m == len(y)
+    assert D.shape[1] == A.shape[1]
 
     b = np.zeros(2 * n)
     d = b
     u = np.zeros(n)
 
-    ATA = op.Dot(A.T, A, a=(mu / lambd))
-    ATA_DTD = op.Plus(ATA, op.Dot(D.T, D))
+    ATA_DTD = Plus(Dot(A.T, A, a=(mu / lambd)), Dot(D.T, D))
 
     def print_info(vector):
         if not (it % 5 == 0 or it == 1):
@@ -27,7 +28,8 @@ def split_bregman_2d(A, D, y, weight=100, it_max=300, mu=0.01, lambd=1, tol=1e-6
                 chisqa=chisq_a, err=error)
 
     it, error = 0, np.inf
-    while error > tol or it <= it_max:
+    print_info(u)
+    while error > tol and it <= it_max:
         u_last = u
 
         rhs = (mu / lambd) * A.T.dot(y) + D.T.dot(d - b)
@@ -37,7 +39,7 @@ def split_bregman_2d(A, D, y, weight=100, it_max=300, mu=0.01, lambd=1, tol=1e-6
             rhs -= ATA_DTD.dot(u)
             u = u + (np.dot(rhs, rhs) / np.dot(ATA_DTD.dot(rhs), rhs)) * rhs
         else:
-            u = cg.conj_grad_solve(ATA_DTD, rhs, 100, 1e-20, 1e-20)
+            u = conj_grad_solve(ATA_DTD, rhs, 100, 1e-20, 1e-20)
         it += 1
 
         D_dot_u_plus_b = D.dot(u) + b
