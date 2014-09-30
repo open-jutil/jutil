@@ -57,6 +57,7 @@ def test_minimizer():
         optimize = mini.Minimizer(stepper)
         optimize.conv_max_iteration = maxit
         optimize(J, 0.5 * np.ones(J.n)),
+
         assert_almost_equal(optimize(J, np.zeros(J.n)), J._x_t)
 
 

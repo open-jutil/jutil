@@ -2,7 +2,9 @@ import numpy as np
 import numpy.linalg as la
 
 
-def conj_grad_solve(A, b, max_iter, abs_tol, rel_tols, verbose=False, initial_guess=None):
+def conj_grad_solve(A, b,
+                    max_iter=-1, abs_tol=1e-20, rel_tol=1e-20,
+                    verbose=False, initial_guess=None):
     """
     Simple implementation of preconditioned conjugate gradient method
 
@@ -27,9 +29,9 @@ def conj_grad_solve(A, b, max_iter, abs_tol, rel_tols, verbose=False, initial_gu
       be reduced to one hundreth of its initial value.
     """
 
-    rel_tols = np.array(rel_tols, copy=True).reshape(-1)
-    assert len(rel_tols) > 0
-    assert np.all(np.diff(rel_tols) > 0)
+    rel_tol = np.array(rel_tol, copy=True).reshape(-1)
+    assert len(rel_tol) > 0
+    assert np.all(np.diff(rel_tol) > 0)
 
     if hasattr(A, "cond"):
         A_cond = A.cond
@@ -46,21 +48,21 @@ def conj_grad_solve(A, b, max_iter, abs_tol, rel_tols, verbose=False, initial_gu
     p = A_cond(r)
     alpha = np.dot(r, p)
     norm_b = la.norm(b)
-    xs = [0 for _ in xrange(len(rel_tols))]
+    xs = [0 for _ in xrange(len(rel_tol))]
 
     if max_iter < 1:
-        max_iter = A.shape[0]
+        max_iter = 2 * A.shape[0]
 
     for i in xrange(max_iter):
         norm = la.norm(r)
         norm_div_norm_b = norm / norm_b
-        for j in xrange(len(rel_tols)):
-            if norm_div_norm_b < rel_tols[j]:
+        for j in xrange(len(rel_tol)):
+            if norm_div_norm_b < rel_tol[j]:
                 xs[j] = x.copy()
                 if j > 0:
-                    rel_tols[j] = -1
+                    rel_tol[j] = -1
 
-        if (norm <= abs_tol) or (norm_div_norm_b < rel_tols[0]):
+        if (norm <= abs_tol) or (norm_div_norm_b < rel_tol[0]):
             break
 
         v = A.dot(p)
@@ -82,7 +84,7 @@ def conj_grad_solve(A, b, max_iter, abs_tol, rel_tols, verbose=False, initial_gu
             ("max=" if (i == max_iter) else ""), i, la.norm(r),
             la.norm(r) / norm_b, norm_b)
 
-    for j in [_j for _j in range(len(rel_tols)) if rel_tols[_j] != -1]:
+    for j in [_j for _j in range(len(rel_tol)) if rel_tol[_j] != -1]:
         xs[j] = x.copy()
     if len(xs) == 1:
         return xs[0]
@@ -129,7 +131,8 @@ def conj_grad_tall_solve(A, bs, max_iter, abs_tol, rel_tol, verbose=False):
     if max_iter < 1:
         max_iter = A.shape[0]
 
-    for i in xrange(max_iter):
+    i = 0
+    while i <= max_iter:
         norms = np.asarray([la.norm(r) for r in rs.T])
         norm_div_norm_b = norms / norms_b
 

@@ -2,7 +2,7 @@ import numpy as np
 import numpy.linalg as la
 
 def lsqr_solve(A, b,
-               max_iter, abs_tol, rel_tol, rel_change_tol,
+               max_iter=-1, abs_tol=1e-20, rel_tol=1e-20, rel_change_tol=1e-20,
                verbose=False):
     """
     Preconditioned LSQR method to minimize ||Ax - b|| = ||r||.
@@ -71,16 +71,9 @@ def lsqr_solve(A, b,
         A_cond = lambda x : x.copy()
         A_cond_inverse = lambda x: x.copy()
 
-    phi = 0
-    rho = 0
-    c = 0
-    s = 0
-    theta = 0
     phi_bar_old = 1e-40
-    rel_change = 0
-    norm_A_trans_r = 0
 
-    norm_A_trans_b = la.norm(A.T.dot(b))
+    norm_ATb = la.norm(A.T.dot(b))
     beta = la.norm(b)
     u = b / beta
     p = A.T.dot(u)
@@ -93,7 +86,7 @@ def lsqr_solve(A, b,
     rho_bar = alpha
 
     if max_iter < 0:
-        max_iter = A.shape[1]
+        max_iter = 2 * A.shape[1]
 
     i = 0
     while i < max_iter:
@@ -125,19 +118,20 @@ def lsqr_solve(A, b,
 
         # Test for convergence, phi_bar = ||r||
         p = A_cond_inverse(-1.0 * phi_bar * alpha * c * v)
-        norm_A_trans_r = la.norm(p)
+        norm_ATr = la.norm(p)
         rel_change = 100 * abs(1 - phi_bar / phi_bar_old)
 
-        if ((norm_A_trans_r < abs_tol)                  or
-            (norm_A_trans_r < rel_tol * norm_A_trans_b) or
+        if ((norm_ATr < abs_tol) or
+            (norm_ATr < rel_tol * norm_ATb) or
             (rel_change < rel_change_tol)):
             break
 
         phi_bar_old = phi_bar
         i += 1
+
     x = A_cond(x)
     if verbose:
         print "LSQR needed {}{} iterations to reduce to {} {} {} {}".format(
             ("max=" if (i == max_iter) else ""), i, phi_bar,
-            norm_A_trans_r, norm_A_trans_r / norm_A_trans_b, rel_change)
+            norm_ATr, norm_ATr / norm_ATb, rel_change)
     return x

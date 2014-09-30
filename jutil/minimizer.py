@@ -93,13 +93,13 @@ class Minimizer(object):
 
 class LevenbergMarquardtStepper(object):
     def __init__(self, lmpar, factor,
-                 cg_max_it=-1, cg_err_rel=1e-20, cg_err_abs=1e-20):
+                 cg_max_iter=-1, cg_tol_rel=1e-20, cg_tol_abs=1e-20):
         self._lmpar_init = lmpar
         self._lmpar = self._lmpar_init
         self._factor = factor
-        self._cg_max_it = cg_max_it
-        self._cg_err_rel = cg_err_rel
-        self._cg_err_abs = cg_err_abs
+        self._cg_max_iter = cg_max_iter
+        self._cg_tol_rel = cg_tol_rel
+        self._cg_tol_abs = cg_tol_abs
 
     def init(self):
         self._lmpar = self._lmpar_init
@@ -110,8 +110,9 @@ class LevenbergMarquardtStepper(object):
         chisq_old = J.chisq
         while True:
             # Solve J''(x_i) x_step = J'(x_i)
-            x_step = cg.conj_grad_solve(CostFunctionOperator(J, x_i, lmpar=self._lmpar), b,
-                                        self._cg_max_it, self._cg_err_abs, self._cg_err_rel)
+            x_step = cg.conj_grad_solve(
+                CostFunctionOperator(J, x_i, lmpar=self._lmpar), b,
+                max_iter=self._cg_max_iter, abs_tol=self._cg_tol_abs, rel_tol=self._cg_tol_rel)
             print x_i, x_step
             x_new = x_i + x_step
             chisq = J(x_new)
@@ -144,6 +145,8 @@ class ScaledSteepestDescentStepper(object):
 
     def __call__(self, J, b, x_i):
         chisq_old = J.chisq
+        # This computes the optimal distance along the steepest descent
+        # direction
         direc = (np.dot(b, b) / np.dot(J.hess_dot(x_i, b), b)) * b
         _, _, x_new = lnsrch(x_i, chisq_old, -b, direc, J)
 
@@ -153,10 +156,10 @@ class ScaledSteepestDescentStepper(object):
 
 
 class GaussNewtonStepper(object):
-    def __init__(self, cg_max_it=-1, cg_err_rel=1e-20, cg_err_abs=1e-20):
-        self._cg_max_it = cg_max_it
-        self._cg_err_rel = cg_err_rel
-        self._cg_err_abs = cg_err_abs
+    def __init__(self, cg_max_iter=-1, cg_tol_rel=1e-20, cg_tol_abs=1e-20):
+        self._cg_max_iter = cg_max_iter
+        self._cg_tol_rel = cg_tol_rel
+        self._cg_tol_abs = cg_tol_abs
 
     def init(self):
         pass
@@ -166,8 +169,9 @@ class GaussNewtonStepper(object):
         from jutil.operator import CostFunctionOperator
         chisq_old = J.chisq
         # Solve J''(x_i) x_step = J'(x_i)
-        x_step = cg.conj_grad_solve(CostFunctionOperator(J, x_i), b,
-                                    self._cg_max_it, self._cg_err_abs, self._cg_err_rel)
+        x_step = cg.conj_grad_solve(
+            CostFunctionOperator(J, x_i), b,
+            max_iter=self._cg_max_iter, abs_tol=self._cg_tol_abs, rel_tol=self._cg_tol_rel)
         _, _, x_new = lnsrch(x_i, chisq_old, -b, x_step, J)
         x_step = x_new - x_i
 
@@ -175,11 +179,11 @@ class GaussNewtonStepper(object):
 
 
 class TruncatedQuasiNewtonStepper(object):
-    def __init__(self, conv_rel, factor, cg_max_it=-1):
+    def __init__(self, conv_rel, factor, cg_max_iter=-1):
         self._conv_rel_init = conv_rel
         self._conv_rel = self._conv_rel_init
         self._factor = factor
-        self._cg_max_it = cg_max_it
+        self._cg_max_iter = cg_max_iter
 
     def init(self):
         self._conv_rel = self._conv_rel_init
@@ -194,7 +198,9 @@ class TruncatedQuasiNewtonStepper(object):
         while err_rels[-1] < 1:
             err_rels.append(min(err_rels[-1] * self._factor, 1.0))
 
-        x_steps = cg.conj_grad_solve(CostFunctionOperator(J, x_i), b, self._cg_max_it, 1e-20, err_rels)
+        x_steps = cg.conj_grad_solve(
+            CostFunctionOperator(J, x_i), b,
+            max_iter=self._cg_max_iter, rel_tol=err_rels)
         x_step = None
         for i, x_step in enumerate(x_steps):
             x_new = x_i + x_step
