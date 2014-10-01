@@ -35,9 +35,12 @@ def conj_grad_solve(A, b, P=None, x_0=None,
 
     if P is None:
         from jutil.operator import Identity
-        P = Identity(A.shape[0])
+        P = Identity(A.shape[1])
 
     x = x_0.copy() if x_0 is not None else np.zeros_like(b)
+
+    if max_iter < 1:
+        max_iter = 2 * A.shape[1]
 
     r = b - A.dot(x)
     p = P.dot(r)
@@ -45,10 +48,8 @@ def conj_grad_solve(A, b, P=None, x_0=None,
     norm_b = la.norm(b)
     xs = [0 for _ in xrange(len(rel_tol))]
 
-    if max_iter < 1:
-        max_iter = 2 * A.shape[0]
-
-    for i in xrange(max_iter):
+    i = 0
+    while i <= max_iter:
         norm = la.norm(r)
         norm_div_norm_b = norm / norm_b
         for j in xrange(len(rel_tol)):
@@ -61,20 +62,24 @@ def conj_grad_solve(A, b, P=None, x_0=None,
             break
 
         v = A.dot(p)
-        lambd = alpha / np.dot(v, p)
+        pAp = np.dot(v, p)
+        if pAp <= 0:  # negative curvature
+            break
+        lambd = alpha / pAp
         assert not np.isnan(lambd)
 
         x += lambd * p
+        i += 1
         r -= lambd * v
-        z = P.dot(r)
 
+        z = P.dot(r)
         new_alpha = np.dot(r, z)
         p *= new_alpha / alpha
         p += z
 
         alpha = new_alpha
 
-#    if verbose:
+    if verbose:
         print "CG needed {}{} iterations to reduce to {} {}".format(
             ("max=" if (i == max_iter) else ""), i, la.norm(r),
             la.norm(r) / norm_b, norm_b)
@@ -120,13 +125,13 @@ def conj_grad_tall_solve(A, bs, P=None, x_0=None,
 
     xs = x_0 if x_0 is not None else np.zeros_like(bs)
 
+    if max_iter < 1:
+        max_iter = A.shape[0]
+
     rs = bs - A.dot(xs)
     ps = P.dot(rs)
     alphas = np.einsum('ij,ij->j', rs, ps)
     norms_b = np.asarray([la.norm(b) for b in bs.T])
-
-    if max_iter < 1:
-        max_iter = A.shape[0]
 
     i = 0
     while i <= max_iter:

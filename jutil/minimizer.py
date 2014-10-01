@@ -129,6 +129,48 @@ class LevenbergMarquardtStepper(object):
                 return x_step
 
 
+class LevenbergMarquardtStepper2(object):
+    def __init__(self, lmpar=1, lmpar_factor=10,
+                 cg_max_iter=-1, cg_tol_rel=1e-20, cg_tol_abs=1e-20):
+        self._lmpar_init = lmpar
+        self._lmpar_factor = factor_factor
+        self._lmpar = self._lmpar_init
+        self._cg_max_iter = cg_max_iter
+        self._cg_tol_rel = cg_tol_rel
+        self._cg_tol_abs = cg_tol_abs
+
+    def init(self):
+        self._lmpar = self._lmpar_init
+
+    def __call__(self, J, b, x_i):
+        import jutil.cg as cg
+        from jutil.operator import CostFunctionOperator
+        chisq_old = J.chisq
+        while True:
+            # Solve J''(x_i) x_step = J'(x_i)
+            x_step = cg.conj_grad_solve(
+                CostFunctionOperator(J, x_i, lmpar=self._lmpar), b,
+                max_iter=self._cg_max_iter, abs_tol=self._cg_tol_abs, rel_tol=self._cg_tol_rel)
+            print x_i, x_step
+
+            x_new = x_i + x_step
+            chisq_pred = chisq_old - np.dot(b, x_step) + 0.5 * np.dot(x_step, J.hess_dot(x_i, x_step))
+            chisq = J(x_new)
+            chisq_factor = chisq_pred / chisq
+            print chisq, chisq_old, chisq_pred, chisq_factor
+            if chisq_factor < 0.25:
+                self._lmpar *= self._lmpar_factor
+                if self._lmpar > 1e30:
+                    raise RuntimeError("Retrieval failed (levenberg marquardt parameter too large)! i" + repr(self._lmpar))
+                print "Increasing lmpar to {} ({}>{})".format(self._lmpar, chisq, chisq_old)
+            else:
+                if chisq_factor > 0.5:
+                    self._lmpar /= self._lmpar_factor
+                    print "Decreasing lmpar to {} ({}<{})".format(self._lmpar, chisq, chisq_old)
+
+                return x_step
+
+
 class SteepestDescentStepper(object):
     def __init__(self):
         pass
@@ -172,6 +214,29 @@ class GaussNewtonStepper(object):
         x_step = cg.conj_grad_solve(
             CostFunctionOperator(J, x_i), b,
             max_iter=self._cg_max_iter, abs_tol=self._cg_tol_abs, rel_tol=self._cg_tol_rel)
+        _, _, x_new = lnsrch(x_i, chisq_old, -b, x_step, J)
+        x_step = x_new - x_i
+
+        return x_step
+
+
+class LineSearchNewtonCGStepper(object):
+    def __init__(self, cg_max_iter=-1, cg_tol_abs=1e-20):
+        self._cg_max_iter = cg_max_iter
+        self._cg_tol_abs = cg_tol_abs
+
+    def init(self):
+        pass
+
+    def __call__(self, J, b, x_i):
+        import jutil.cg as cg
+        from jutil.operator import CostFunctionOperator
+        chisq_old = J.chisq
+        eps = min(0.5, np.sqrt(la.norm(b)))
+        # Solve J''(x_i) x_step = J'(x_i)
+        x_step = cg.conj_grad_solve(
+            CostFunctionOperator(J, x_i), b,
+            max_iter=self._cg_max_iter, abs_tol=self._cg_tol_abs, rel_tol=eps)
         _, _, x_new = lnsrch(x_i, chisq_old, -b, x_step, J)
         x_step = x_new - x_i
 

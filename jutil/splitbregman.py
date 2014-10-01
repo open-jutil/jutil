@@ -39,7 +39,7 @@ def split_bregman_2d(A, D, y, weight=100, it_max=300, mu=0.01, lambd=1, tol=1e-6
             rhs -= ATA_DTD.dot(u)
             u = u + (np.dot(rhs, rhs) / np.dot(ATA_DTD.dot(rhs), rhs)) * rhs
         else:
-            u = conj_grad_solve(ATA_DTD, rhs, 100, 1e-20, 1e-20)
+            u = conj_grad_solve(ATA_DTD, rhs, max_iter=100, abs_tol=1e-20, rel_tol=1e-20)
         it += 1
 
         D_dot_u_plus_b = D.dot(u) + b

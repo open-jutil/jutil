@@ -67,7 +67,12 @@ def lsqr_solve(A, b, P=None, x_0=None,
 
     if P is None:
         from jutil.operator import Identity
-        P = Identity(A.shape[0])
+        P = Identity(A.shape[1])
+    else:
+        assert hasattr(P, "I"), "Preconditioner needs to support inverse!"
+
+    if max_iter < 0:
+        max_iter = 2 * A.shape[1]
 
     phi_bar_old = 1e-40
 
@@ -82,9 +87,6 @@ def lsqr_solve(A, b, P=None, x_0=None,
     x = np.zeros(A.shape[1])
     phi_bar = beta
     rho_bar = alpha
-
-    if max_iter < 0:
-        max_iter = 2 * A.shape[1]
 
     i = 0
     while i < max_iter:
@@ -112,6 +114,7 @@ def lsqr_solve(A, b, P=None, x_0=None,
 
         # Update x and w
         x += (phi / rho) * w
+        i += 1
         w = v - (theta / rho) * w
 
         # Test for convergence, phi_bar = ||r||
@@ -125,7 +128,6 @@ def lsqr_solve(A, b, P=None, x_0=None,
             break
 
         phi_bar_old = phi_bar
-        i += 1
 
     x = P.dot(x)
     if verbose:

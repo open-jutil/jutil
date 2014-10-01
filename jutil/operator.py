@@ -57,6 +57,23 @@ class Identity(object):
         return self._shape
 
 
+class Scale(object):
+    def __init__(self, A, a, adjoint=None):
+        self._A, self._a = A, a
+        if adjoint is None:
+            if hasattr(A, "T"):
+                self.T = Scale(A.T, a, adjoint=self)
+        else:
+            self.T = adjoint
+
+    def dot(self, x):
+        return self._a * self._A.dot(x)
+
+    @property
+    def shape(self):
+        return self._A.shape
+
+
 class Dot(object):
     def __init__(self, A, B, a=1, adjoint=None):
         self._A, self._B, self._a = A, B, a
