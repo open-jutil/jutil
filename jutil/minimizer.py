@@ -75,7 +75,7 @@ class Minimizer(object):
             # Convergence test based on reduction of cost function...
             fmin_reached = 100. * abs(1. - chisq / chisq_old) < self.conv_min_costfunction_reduction
             # Convergence test on normalized step size
-            dmin_reached = disq < self.conv_min_normalized_stepsize
+            dmin_reached = disq <= self.conv_min_normalized_stepsize
             maxit_reached = it >= self.conv_max_iteration
 
             if dmin_reached or fmin_reached or dp_reached or maxit_reached:
@@ -113,10 +113,8 @@ class LevenbergMarquardtStepper(object):
             x_step = cg.conj_grad_solve(
                 CostFunctionOperator(J, x_i, lmpar=self._lmpar), b,
                 max_iter=self._cg_max_iter, abs_tol=self._cg_tol_abs, rel_tol=self._cg_tol_rel)
-            print x_i, x_step
             x_new = x_i + x_step
             chisq = J(x_new)
-            print x_i.shape, x_step.shape
             if chisq > chisq_old:
                 self._lmpar *= self._factor
                 if self._lmpar > 1e30:
@@ -151,7 +149,7 @@ class LevenbergMarquardtStepper2(object):
             x_step = cg.conj_grad_solve(
                 CostFunctionOperator(J, x_i, lmpar=self._lmpar), b,
                 max_iter=self._cg_max_iter, abs_tol=self._cg_tol_abs, rel_tol=self._cg_tol_rel)
-            print x_i, x_step
+#            print x_i, x_step
 
             x_new = x_i + x_step
             chisq_pred = chisq_old - np.dot(b, x_step) + 0.5 * np.dot(x_step, J.hess_dot(x_i, x_step))
@@ -275,7 +273,7 @@ class TruncatedQuasiNewtonStepper(object):
 
             if chisq > chisq_old and i + 1 == len(x_steps):
                 print "  CG steps exhausted. Employing line search."
-                print -b, x_step
+                #print -b, x_step
                 _, chisq, x_new = lnsrch(x_i, chisq_old, -b, x_step, J)
                 x_step = x_new - x_i
                 self._conv_rel = 1. / self._factor
