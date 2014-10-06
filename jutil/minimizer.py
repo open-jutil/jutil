@@ -133,7 +133,7 @@ class LevenbergMarquardtStepper2(object):
     def __init__(self, lmpar=1, lmpar_factor=10,
                  cg_max_iter=-1, cg_tol_rel=1e-20, cg_tol_abs=1e-20):
         self._lmpar_init = lmpar
-        self._lmpar_factor = factor_factor
+        self._lmpar_factor = lmpar_factor
         self._lmpar = self._lmpar_init
         self._cg_max_iter = cg_max_iter
         self._cg_tol_rel = cg_tol_rel

@@ -1,42 +1,18 @@
 import numpy as np
 
 
-class JacobiMatrixOperator(object):
-    def __init__(self, A):
-        assert A.shape[0] == A.shape[1]
-        self._A = A
-        self._diagonal = np.diag(A).copy()
-        nonzero = self._diagonal != 0
-        self._diagonal[nonzero] = 1. / self._diagonal[nonzero]
-        self.dot = self._A.dot
-
-    def cond(self, x):
-        return (self._diagonal * x.T).T
-
-    @property
-    def shape(self):
-        return self._A.shape
-
-
 class CostFunctionOperator(object):
     def __init__(self, J, x, lmpar=0):
         self._J = J
         self._x = x
         self._lmpar = lmpar
         self.dot = self._dot if lmpar == 0 else self._dot_lam
-        self.cond = self._cond if lmpar == 0 else self._cond_lam
 
     def _dot(self, vec):
         return self._J.hess_dot(self._x, vec)
 
-    def _cond(self, vec):
-        return vec.copy()
-
     def _dot_lam(self, vec):
         return self._J.hess_dot(self._x, vec) + self._lmpar * vec
-
-    def _cond_lam(self, vec):
-        return vec.copy() * (1. + self._lmpar)
 
     @property
     def shape(self):
@@ -169,6 +145,7 @@ class VStack(object):
             self.T = adjoint
 
     def dot(self, x):
+        print x.shape, [a.shape for a in self._As]
         return np.concatenate([A.dot(x) for A in self._As])
 
     @property

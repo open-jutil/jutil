@@ -4,38 +4,7 @@ import jutil.minimizer as minimizer
 import numpy as np
 import numpy.linalg as la
 import pylab
-import time
-
-class TakeTime(object):
-    """
-    Measure the time consumed by an entire block and write to stdout.
-
-    Usage:
-
-    with TakeTime("Doing something") as timer:
-        do_something
-        if timer.dt > time_limit:
-            print("Oh no, running late already!")
-        do_even_more
-
-    The 'as' part is optional.
-    """
-
-    def __init__(self, name):
-        self.name = name
-        self.msg = ""
-
-    def __enter__(self):
-        self.t0 = time.time()
-        return self
-
-    def __exit__(self, type, value, traceback):
-        print("%s: %.3f sec    %s" % (self.name, self.dt, self.msg))
-
-    @property
-    def dt(self):
-        return time.time() - self.t0
-
+from jutil.taketime import TakeTime
 
 
 class CostFunction(object):
@@ -149,7 +118,7 @@ class CostFunctionSquares(CostFunctionImage):
         super(CostFunctionSquares, self).__init__(p, lam)
 
 
-def split_bregman_2d_test(image_t, image, ig=None, weight=100, it_max=300, mu=0.01, lambd=1, tol=1e-6, isotropic=True):
+def split_bregman_2d_test(image_t, image, ig=None, weight=100, max_iter=300, mu=0.01, lambd=1, tol=1e-6, isotropic=True):
     import scipy.sparse
     import jutil.cg as cg
     import itertools
@@ -219,7 +188,7 @@ def split_bregman_2d_test(image_t, image, ig=None, weight=100, it_max=300, mu=0.
 
     ATA_DTD = op.Plus(op.Dot(A.T, A), op.Dot(D.T, D))
 
-    x = cg.conj_grad_solve(ATA_DTD, A.T.dot(image), 300, 1e-40, 1e-40, verbose=True)
+    x = cg.conj_grad_solve(ATA_DTD, A.T.dot(image), max_iter=300, abs_tol=1e-40, rel_tol=1e-40, verbose=True)
     print la.norm(x-image_t)
 
     b = np.zeros(2 * n)
@@ -251,7 +220,7 @@ def split_bregman_2d_test(image_t, image, ig=None, weight=100, it_max=300, mu=0.
             rhs -= ATA_DTD.dot(u)
             u = u + (np.dot(rhs, rhs) / np.dot(ATA_DTD.dot(rhs), rhs)) * rhs
         else:
-            u = cg.conj_grad_solve(ATA_DTD, rhs, 300, 1e-20, 1e-20)
+            u = cg.conj_grad_solve(ATA_DTD, rhs, max_iter=300, abs_tol=1e-20, rel_tol=1e-20)
         it += 1
 
         D_dot_u_plus_b = D.dot(u) + b
@@ -269,7 +238,7 @@ def split_bregman_2d_test(image_t, image, ig=None, weight=100, it_max=300, mu=0.
 
         error = la.norm(u_last - u) / la.norm(u)
         printInfo(u)
-        if error < tol or it > it_max:
+        if error < tol or it > max_iter:
             break
     print la.norm(u - image_t)
     pylab.subplot(1, 3, 1)
@@ -284,7 +253,7 @@ def split_bregman_2d_test(image_t, image, ig=None, weight=100, it_max=300, mu=0.
     return u.reshape(n_root, n_root)
 
 
-def split_bregman_2d(image, ig=None, weight=50, it_max=400, mu=5, lambd=1, tol=1e-6, isotropic=True):
+def split_bregman_2d(image, ig=None, weight=50, max_iter=400, mu=5, lambd=1, tol=1e-6, isotropic=True):
     import scipy.sparse
     import cg
     import itertools
@@ -353,7 +322,7 @@ def split_bregman_2d(image, ig=None, weight=50, it_max=400, mu=5, lambd=1, tol=1
 
         error = la.norm(u_last - u) / la.norm(u)
         printInfo()
-        if error < tol or it > it_max:
+        if error < tol or it > max_iter:
             break
     return u.reshape(n_root, n_root)
 
@@ -365,7 +334,7 @@ def tv_denoise_2d(image, weight=50, eps=2.e-4, keep_type=False):
     gy = np.zeros_like(image)
     d = np.zeros_like(image)
     i = 0
-    while i < n_iter_max:
+    while i < n_max_iter:
         print i
         d = -px -py
         d[1:] += px[:-1]

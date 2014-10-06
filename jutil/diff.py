@@ -42,3 +42,5 @@ def get_diff_op(mask, axis, factor=1):
     vals = np.concatenate([-np.ones(factor * len(m1s)), np.ones(factor * len(m1s))])
 
     return scipy.sparse.coo_matrix((vals, (rows, cols)), (factor * n,factor * n)).tocsr()
+
+get_diff_operator = get_diff_op

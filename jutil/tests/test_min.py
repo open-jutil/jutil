@@ -49,20 +49,18 @@ def test_minimizer():
     J = CostFunction()
 
     for maxit, stepper in [
-#            (1000, mini.SteepestDescentStepper()),
-#            (1000, mini.ScaledSteepestDescentStepper()),
-#            (10, mini.LevenbergMarquardtStepper(1e-4, 100)),
+            (1000, mini.SteepestDescentStepper()),
+            (1000, mini.ScaledSteepestDescentStepper()),
+            (10, mini.LevenbergMarquardtStepper(1e-4, 100)),
             (10, mini.LevenbergMarquardtStepper2(10., 100.)),
-#            (10, mini.GaussNewtonStepper()),
-#            (10, mini.TruncatedQuasiNewtonStepper(1e-4, 10))
+            (10, mini.GaussNewtonStepper()),
+            (10, mini.TruncatedQuasiNewtonStepper(1e-4, 10))
             ]:
         optimize = mini.Minimizer(stepper)
         optimize.conv_max_iteration = maxit
         optimize(J, 0.5 * np.ones(J.n)),
 
         assert_almost_equal(optimize(J, np.zeros(J.n)), J._x_t)
-test_minimizer()
-exit()
 
 if __name__ == '__main__':
     from numpy import testing
