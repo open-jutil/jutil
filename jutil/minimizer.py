@@ -1,6 +1,8 @@
 import numpy as np
 import numpy.linalg as la
 from jutil.lnsrch import lnsrch
+from jutil.operator import CostFunctionOperator
+import jutil.cg as cg
 
 
 def get_chi_square_probability(chisq, N):
@@ -47,7 +49,7 @@ class Minimizer(object):
 
             b = -J.jac(x_i)
 
-            if la.norm(b) / J.m <= self.conv_min_costfunction_gradient:
+            if la.norm(b) <= self.conv_min_costfunction_gradient:
                 print "Convergence criteria reached (dfmin)"
                 break
 
@@ -62,18 +64,16 @@ class Minimizer(object):
             it += 1
 
             chisq = J.chisq
-            assert chisq <= chisq_old
+            assert chisq <= chisq_old, chisq_old - chisq
 
             # normalize step size in state space
             disq = np.dot(x_step, b) / J.n
 
             # Discrepancy principle
-            dp_reached = (np.sqrt(J.chisq_m * J.m) <
-                          self.conv_discrepancy_principle_tau *
-                          np.sqrt(J.m))
+            dp_reached = (J.chisq_m <= self.conv_discrepancy_principle_tau ** 2)
 
             # Convergence test based on reduction of cost function...
-            fmin_reached = 100. * abs(1. - chisq / chisq_old) < self.conv_min_costfunction_reduction
+            fmin_reached = 100. * abs(1. - chisq / chisq_old) <= self.conv_min_costfunction_reduction
             # Convergence test on normalized step size
             dmin_reached = disq <= self.conv_min_normalized_stepsize
             maxit_reached = it >= self.conv_max_iteration
@@ -91,12 +91,12 @@ class Minimizer(object):
         return x_i
 
 
-class LevenbergMarquardtStepper(object):
+class LevenbergMarquardtAbstractBase(object):
     def __init__(self, lmpar, factor,
                  cg_max_iter=-1, cg_tol_rel=1e-20, cg_tol_abs=1e-20):
         self._lmpar_init = lmpar
         self._lmpar = self._lmpar_init
-        self._factor = factor
+        self._lmpar_factor = factor
         self._cg_max_iter = cg_max_iter
         self._cg_tol_rel = cg_tol_rel
         self._cg_tol_abs = cg_tol_abs
@@ -104,68 +104,50 @@ class LevenbergMarquardtStepper(object):
     def init(self):
         self._lmpar = self._lmpar_init
 
+class LevenbergMarquardtReductionStepper(LevenbergMarquardtAbstractBase):
     def __call__(self, J, b, x_i):
-        import jutil.cg as cg
-        from jutil.operator import CostFunctionOperator
         chisq_old = J.chisq
         while True:
-            # Solve J''(x_i) x_step = J'(x_i)
             x_step = cg.conj_grad_solve(
                 CostFunctionOperator(J, x_i, lmpar=self._lmpar), b,
                 max_iter=self._cg_max_iter, abs_tol=self._cg_tol_abs, rel_tol=self._cg_tol_rel)
             x_new = x_i + x_step
             chisq = J(x_new)
             if chisq > chisq_old:
-                self._lmpar *= self._factor
-                if self._lmpar > 1e30:
-                    raise RuntimeError("Retrieval failed (levenberg marquardt parameter too large)! i" + repr(self._lmpar))
-                print "Increasing lmpar to {} ({}>{})".format(self._lmpar, chisq, chisq_old)
-            else:
-                self._lmpar /= self._factor
-                print "Decreasing lmpar to {} ({}<{})".format(self._lmpar, chisq, chisq_old)
-
-                return x_step
-
-
-class LevenbergMarquardtStepper2(object):
-    def __init__(self, lmpar=1, lmpar_factor=10,
-                 cg_max_iter=-1, cg_tol_rel=1e-20, cg_tol_abs=1e-20):
-        self._lmpar_init = lmpar
-        self._lmpar_factor = lmpar_factor
-        self._lmpar = self._lmpar_init
-        self._cg_max_iter = cg_max_iter
-        self._cg_tol_rel = cg_tol_rel
-        self._cg_tol_abs = cg_tol_abs
-
-    def init(self):
-        self._lmpar = self._lmpar_init
-
-    def __call__(self, J, b, x_i):
-        import jutil.cg as cg
-        from jutil.operator import CostFunctionOperator
-        chisq_old = J.chisq
-        while True:
-            # Solve J''(x_i) x_step = J'(x_i)
-            x_step = cg.conj_grad_solve(
-                CostFunctionOperator(J, x_i, lmpar=self._lmpar), b,
-                max_iter=self._cg_max_iter, abs_tol=self._cg_tol_abs, rel_tol=self._cg_tol_rel)
-#            print x_i, x_step
-
-            x_new = x_i + x_step
-            chisq_pred = chisq_old - np.dot(b, x_step) + 0.5 * np.dot(x_step, J.hess_dot(x_i, x_step))
-            chisq = J(x_new)
-            chisq_factor = chisq_pred / chisq
-            print chisq, chisq_old, chisq_pred, chisq_factor
-            if chisq_factor < 0.25:
                 self._lmpar *= self._lmpar_factor
                 if self._lmpar > 1e30:
                     raise RuntimeError("Retrieval failed (levenberg marquardt parameter too large)! i" + repr(self._lmpar))
                 print "Increasing lmpar to {} ({}>{})".format(self._lmpar, chisq, chisq_old)
             else:
+                self._lmpar /= self._lmpar_factor
+                print "Decreasing lmpar to {} ({}<{})".format(self._lmpar, chisq, chisq_old)
+
+                return x_step
+
+
+class LevenbergMarquardtPredictorStepper(LevenbergMarquardtAbstractBase):
+    def __call__(self, J, b, x_i):
+        chisq_old = J.chisq
+        while True:
+            x_step = cg.conj_grad_solve(
+                CostFunctionOperator(J, x_i, lmpar=self._lmpar), b,
+                max_iter=self._cg_max_iter, abs_tol=self._cg_tol_abs, rel_tol=self._cg_tol_rel)
+            x_new = x_i + x_step
+
+            delta_chisq_pred = - np.dot(b, x_step) + 0.5 * np.dot(x_step, J.hess_dot(x_i, x_step))
+            delta_chisq = J(x_new) - chisq_old
+            chisq_factor = delta_chisq_pred / delta_chisq
+            print delta_chisq_pred, delta_chisq, chisq_factor
+            if chisq_factor < 0.25:
+                self._lmpar *= self._lmpar_factor
+                if self._lmpar > 1e30:
+                    raise RuntimeError("Retrieval failed (levenberg marquardt parameter too large)! i" + repr(self._lmpar))
+                print "Increasing lmpar to {} ({}<0.25)".format(self._lmpar, chisq_factor)
+            else:
                 if chisq_factor > 0.5:
                     self._lmpar /= self._lmpar_factor
-                    print "Decreasing lmpar to {} ({}<{})".format(self._lmpar, chisq, chisq_old)
-
+                    print "Decreasing lmpar to {} ({}>0.5)".format(self._lmpar, chisq_factor)
+            if delta_chisq <= 0:
                 return x_step
 
 
@@ -179,7 +161,7 @@ class SteepestDescentStepper(object):
         return x_new - x_i
 
 
-class ScaledSteepestDescentStepper(object):
+class CauchyPointSteepestDescentStepper(object):
     def __init__(self):
         pass
 
@@ -205,20 +187,20 @@ class GaussNewtonStepper(object):
         pass
 
     def __call__(self, J, b, x_i):
-        import jutil.cg as cg
-        from jutil.operator import CostFunctionOperator
         chisq_old = J.chisq
         # Solve J''(x_i) x_step = J'(x_i)
         x_step = cg.conj_grad_solve(
             CostFunctionOperator(J, x_i), b,
             max_iter=self._cg_max_iter, abs_tol=self._cg_tol_abs, rel_tol=self._cg_tol_rel)
+        if np.dot(x_step, b) == 0:
+            return np.zeros_like(x_step)
         _, _, x_new = lnsrch(x_i, chisq_old, -b, x_step, J)
         x_step = x_new - x_i
 
         return x_step
 
 
-class LineSearchNewtonCGStepper(object):
+class LineSearchCGQuasiNewtonStepper(object):
     def __init__(self, cg_max_iter=-1, cg_tol_abs=1e-20):
         self._cg_max_iter = cg_max_iter
         self._cg_tol_abs = cg_tol_abs
@@ -227,11 +209,9 @@ class LineSearchNewtonCGStepper(object):
         pass
 
     def __call__(self, J, b, x_i):
-        import jutil.cg as cg
-        from jutil.operator import CostFunctionOperator
         chisq_old = J.chisq
         eps = min(0.5, np.sqrt(la.norm(b)))
-        # Solve J''(x_i) x_step = J'(x_i)
+
         x_step = cg.conj_grad_solve(
             CostFunctionOperator(J, x_i), b,
             max_iter=self._cg_max_iter, abs_tol=self._cg_tol_abs, rel_tol=eps)
@@ -241,30 +221,29 @@ class LineSearchNewtonCGStepper(object):
         return x_step
 
 
-class TruncatedQuasiNewtonStepper(object):
+class TruncatedCGQuasiNewtonStepper(object):
     def __init__(self, conv_rel, factor, cg_max_iter=-1):
         self._conv_rel_init = conv_rel
         self._conv_rel = self._conv_rel_init
         self._factor = factor
         self._cg_max_iter = cg_max_iter
 
+    def _get_err_rels():
+        result = [self._conv_rel]
+        while err_rels[-1] < 1:
+            result.append(min(err_rels[-1] * self._factor, 1.0))
+        return result
+
     def init(self):
         self._conv_rel = self._conv_rel_init
 
     def __call__(self, J, b, x_i):
-        import jutil.cg as cg
-        from jutil.operator import CostFunctionOperator
         chisq_old = J.chisq
-        assert chisq_old > 0
 
-        err_rels = [self._conv_rel]
-        while err_rels[-1] < 1:
-            err_rels.append(min(err_rels[-1] * self._factor, 1.0))
-
+        err_rels = self._get_err_rels()
         x_steps = cg.conj_grad_solve(
             CostFunctionOperator(J, x_i), b,
-            max_iter=self._cg_max_iter, rel_tol=err_rels)
-        x_step = None
+            max_iter=self._cg_max_iter, rel_tol=err_rels, abs_tol=0, verbose=True)
         for i, x_step in enumerate(x_steps):
             x_new = x_i + x_step
             chisq = J(x_new)
@@ -273,7 +252,6 @@ class TruncatedQuasiNewtonStepper(object):
 
             if chisq > chisq_old and i + 1 == len(x_steps):
                 print "  CG steps exhausted. Employing line search."
-                #print -b, x_step
                 _, chisq, x_new = lnsrch(x_i, chisq_old, -b, x_step, J)
                 x_step = x_new - x_i
                 self._conv_rel = 1. / self._factor
