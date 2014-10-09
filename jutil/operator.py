@@ -145,7 +145,6 @@ class VStack(object):
             self.T = adjoint
 
     def dot(self, x):
-        print x.shape, [a.shape for a in self._As]
         return np.concatenate([A.dot(x) for A in self._As])
 
     @property

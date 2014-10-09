@@ -45,24 +45,54 @@ class CostFunction(object):
         return self._chisqa
 
 
-def test_minimizer():
+def execute_minimizer(max_it, stepper):
     J = CostFunction()
+    optimize = mini.Minimizer(stepper)
+    optimize.update_tolerances({"max_iteration": max_it})
+    assert_almost_equal(optimize(J, 0.5 * np.ones(J.n)), J._x_t)
 
-    for maxit, stepper in [
-#            (1000, mini.SteepestDescentStepper()),
-#            (1000, mini.ScaledSteepestDescentStepper()),
-#            (10, mini.LevenbergMarquardtStepper(1e-4, 100)),
-            (10, mini.LevenbergMarquardtStepper2(10., 100.)),
-#            (10, mini.GaussNewtonStepper()),
-#            (10, mini.TruncatedQuasiNewtonStepper(1e-4, 10))
+def execute_minimize(max_it, method, options):
+    J = CostFunction()
+    x0 =  0.5 * np.ones(J.n)
+    result = mini.minimize(J, x0, method=method, options=options, tol={"max_iteration": max_it})
+    assert_almost_equal(result, J._x_t)
+
+def execute_scipy(method):
+    J = CostFunction()
+    res = mini.scipy_minimize(J, 0.5 * np.ones(J.n), tol=1e-12, method=method)
+    assert_almost_equal(res.x, J._x_t)
+
+for maxit, stepper, options in [
+            (1000, "SteepestDescent", {}),
+            (1000, "CauchyPointSteepestDescent", {}),
+            (10, "LevenbergMarquardtReduction", {"lmpar": 1e-4, "factor": 100}),
+            (10, "LevenbergMarquardtPredictor", {"lmpar": 10., "factor": 100.}),
+            (10, "GaussNewton", {}),
+            (10, "TruncatedCGQuasiNewton", {}),
+            (10, "TrustRegionTruncatedCGQuasiNewton", {})
             ]:
-        print maxit
-        optimize = mini.Minimizer(stepper)
-        optimize.conv_max_iteration = maxit
+    current_module = __import__(__name__)
+    test_function = (lambda y: lambda : execute_minimize(*y))((maxit, stepper, options))
+    test_function.__name__ = "test_minimize_" + stepper
+    setattr(current_module, test_function.__name__, test_function)
 
-        assert_almost_equal(optimize(J, 0.5 * np.ones(J.n)), J._x_t)
-test_minimizer()
-exit()
+    instance = getattr(mini, stepper + "Stepper")(**options)
+    test_function2 = (lambda y: lambda : execute_minimizer(*y))((maxit, instance))
+    test_function2.__name__ = "test_minimizer_" + type(instance).__name__
+    setattr(current_module, test_function2.__name__, test_function2)
+
+
+for method in [
+        "BFGS",
+        "Newton-CG",
+        "CG",
+        "trust-ncg",
+        ]:
+    current_module = __import__(__name__)
+    test_function = lambda : execute_scipy(method)
+    test_function.__name__ = "test_scipy_" + method
+    setattr(current_module, test_function.__name__, test_function)
+
 if __name__ == '__main__':
     from numpy import testing
     testing.run_module_suite()

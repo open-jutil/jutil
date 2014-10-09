@@ -17,11 +17,11 @@ def test_cg():
 
     assert_almost_equal(conj_grad_solve(A, b,
                                         max_iter=100, abs_tol=0, rel_tol=1e-10), x)
-    assert_almost_equal(conj_grad_solve(A, b, P=Jacobi(A),
+    assert_almost_equal(conj_grad_solve(A, b, P=JacobiPreconditioner(A),
                                         max_iter=100, abs_tol=0, rel_tol=1e-10), x)
     assert_almost_equal(conj_grad_tall_solve(A, b_tall,
                                              max_iter=100, abs_tol=0, rel_tol=1e-10), x_tall)
-    assert_almost_equal(conj_grad_tall_solve(A, b_tall, P=Jacobi(A),
+    assert_almost_equal(conj_grad_tall_solve(A, b_tall, P=JacobiPreconditioner(A),
                                              max_iter=100, abs_tol=0, rel_tol=1e-10), x_tall)
 
 if __name__ == '__main__':

@@ -21,19 +21,27 @@ def get_chi_square_probability(chisq, N):
 class Minimizer(object):
     def __init__(self, stepper):
         self._stepper = stepper
-        self.conv_min_costfunction_gradient = 0
-        self.conv_discrepancy_principle_tau = 0
-        self.conv_min_costfunction_reduction = 0
-        self.conv_min_normalized_stepsize = 0
-        self.conv_max_iteration = 10
+        self._conv = {
+            "min_costfunction_gradient": 0,
+            "discrepancy_principle_tau": 0,
+            "min_costfunction_reduction": 0,
+            "min_normalized_stepsize": 0,
+            "max_iteration": 10,
+        }
 
-    def print_info(self, it, J, disq, normb):
+    def update_tolerances(self, tol):
+        assert all([key in self._conv for key in tol]), tol
+        self._conv.update(tol)
+
+
+    def _print_info(self, it, J, disq, normb):
         print "it= {it} / chi^2/m= {chisq} (meas= {chisqm} / apr= {chisqa} ) / d_i^2/n= {disq} / |J'|= {normb} / Q= {prob}".format(
             it=it, chisq=J.chisq, chisqm=J.chisq_m,
             chisqa=J.chisq_a, disq=disq, normb=normb,
             prob=get_chi_square_probability(J.chisq * J.m, J.m))
 
     def __call__(self, J, x_0):
+        print self._conv
         x_i = x_0.copy()
 
         J.init(x_i)
@@ -43,17 +51,18 @@ class Minimizer(object):
 
         disq = 0.0
         it = 0
+        converged = {}
         while True:
             if hasattr(J, "updateJacobian"):
                 J.updateJacobian(x_i)
 
             b = -J.jac(x_i)
 
-            if la.norm(b) <= self.conv_min_costfunction_gradient:
-                print "Convergence criteria reached (dfmin)"
+            if la.norm(b) <= self._conv["min_costfunction_gradient"]:
+                print "Convergence criteria reached [\"min_costfunction_gradient\"]"
                 break
 
-            self.print_info(it, J, disq, la.norm(b))
+            self._print_info(it, J, disq, la.norm(b))
 
             chisq_old = J.chisq
             x_step = self._stepper(J, b, x_i)
@@ -70,29 +79,25 @@ class Minimizer(object):
             disq = np.dot(x_step, b) / J.n
 
             # Discrepancy principle
-            dp_reached = (J.chisq_m <= self.conv_discrepancy_principle_tau ** 2)
+            converged["discrepancy_principle_tau"] = (J.chisq_m <= self._conv["discrepancy_principle_tau"] ** 2)
 
             # Convergence test based on reduction of cost function...
-            fmin_reached = 100. * abs(1. - chisq / chisq_old) <= self.conv_min_costfunction_reduction
+            converged["min_costfunction_reduction"] = 100. * abs(1. - chisq / chisq_old) <= self._conv["min_costfunction_reduction"]
             # Convergence test on normalized step size
-            dmin_reached = disq <= self.conv_min_normalized_stepsize
-            maxit_reached = it >= self.conv_max_iteration
+            converged["min_normalized_stepsize"] = disq <= self._conv["min_normalized_stepsize"]
+            converged["max_iteration"]= it >= self._conv["max_iteration"]
 
-            if dmin_reached or fmin_reached or dp_reached or maxit_reached:
-                print "Convergence criteria reached. {dp}{fmin}{dmin}{maxit}".format(
-                    dp="(dp)" if dp_reached else "",
-                    fmin="(fmin)" if fmin_reached else "",
-                    dmin="(dmin)" if dmin_reached else "",
-                    maxit="(maxit)" if maxit_reached else "")
+            if any(converged.values()):
+                print "Convergence criteria reached. " + str([x for x in converged if converged[x]])
                 break
         b = -J.jac(x_i)
-        self.print_info(it, J, disq, la.norm(b))
+        self._print_info(it, J, disq, la.norm(b))
 
         return x_i
 
 
 class LevenbergMarquardtAbstractBase(object):
-    def __init__(self, lmpar, factor,
+    def __init__(self, lmpar=1, factor=10,
                  cg_max_iter=-1, cg_tol_rel=1e-20, cg_tol_abs=1e-20):
         self._lmpar_init = lmpar
         self._lmpar = self._lmpar_init
@@ -103,6 +108,7 @@ class LevenbergMarquardtAbstractBase(object):
 
     def init(self):
         self._lmpar = self._lmpar_init
+
 
 class LevenbergMarquardtReductionStepper(LevenbergMarquardtAbstractBase):
     def __call__(self, J, b, x_i):
@@ -136,8 +142,10 @@ class LevenbergMarquardtPredictorStepper(LevenbergMarquardtAbstractBase):
 
             delta_chisq_pred = - np.dot(b, x_step) + 0.5 * np.dot(x_step, J.hess_dot(x_i, x_step))
             delta_chisq = J(x_new) - chisq_old
-            chisq_factor = delta_chisq_pred / delta_chisq
-            print delta_chisq_pred, delta_chisq, chisq_factor
+            if delta_chisq != 0:
+                chisq_factor = delta_chisq_pred / delta_chisq
+            else:
+                chisq_factor = np.Inf
             if chisq_factor < 0.25:
                 self._lmpar *= self._lmpar_factor
                 if self._lmpar > 1e30:
@@ -200,7 +208,7 @@ class GaussNewtonStepper(object):
         return x_step
 
 
-class LineSearchCGQuasiNewtonStepper(object):
+class TruncatedCGQuasiNewtonStepper(object):
     def __init__(self, cg_max_iter=-1, cg_tol_abs=1e-20):
         self._cg_max_iter = cg_max_iter
         self._cg_tol_abs = cg_tol_abs
@@ -221,17 +229,17 @@ class LineSearchCGQuasiNewtonStepper(object):
         return x_step
 
 
-class TruncatedCGQuasiNewtonStepper(object):
-    def __init__(self, conv_rel, factor, cg_max_iter=-1):
+class TrustRegionTruncatedCGQuasiNewtonStepper(object):
+    def __init__(self, conv_rel=1e-4, factor=10, cg_max_iter=-1):
         self._conv_rel_init = conv_rel
         self._conv_rel = self._conv_rel_init
         self._factor = factor
         self._cg_max_iter = cg_max_iter
 
-    def _get_err_rels():
+    def _get_err_rels(self):
         result = [self._conv_rel]
-        while err_rels[-1] < 1:
-            result.append(min(err_rels[-1] * self._factor, 1.0))
+        while result[-1] < 1:
+            result.append(min(result[-1] * self._factor, 1.0))
         return result
 
     def init(self):
@@ -260,3 +268,54 @@ class TruncatedCGQuasiNewtonStepper(object):
             break
         print "  Decreasing reltol to {} ({}<{})".format(self._conv_rel, chisq, chisq_old)
         return x_step
+
+
+def minimize(J, x0, method="TrustRegionTruncatedCGQuasiNewton", options=None, tol=None):
+    """
+    Front-end for JUTIL non-linear minimization.
+
+    J: CostFunction
+    x0: inital guess
+    method: String determining method
+    options: Additional parameters for the chosen method
+    tol: convergence options for the Outer loop
+
+    Supported methods are
+    * SteepestDescent
+    * CauchyPointSteepestDescent
+    * LevenbergMarquardtReduction
+    * LevenbergMarquardtPredictor
+    * GaussNewton
+    * TruncatedCGQuasiNewton
+    * TrustRegionTruncatedCGQuasiNewton(default)
+
+    """
+    current_module = __import__(__name__)
+    try:
+        meth = globals()[method + "Stepper"]
+    except KeyError:
+        raise ValueError("Method {} unknown.".format(method))
+    mini = Minimizer(meth(**options))
+    mini.update_tolerances(tol)
+    return mini(J, x0)
+
+
+def scipy_minimize(J, x0, method=None, options=None, tol=None):
+    """
+    Wrapper around scipy.optimize. Tested are "BFGS", "Newton-CG", "CG", and "trust-ncg".
+    """
+    def print_info(x_i):
+        print "it= {it} / chi^2/m= {chisq} (meas= {chisqm} / apr= {chisqa} ) / |J'|= {normb}".format(
+            it=print_info.it, chisq=J.chisq, chisqm=J.chisq_m,
+            chisqa=J.chisq_a, normb=la.norm(J.jac(x_i)))
+        print_info.it += 1
+    print_info.it = 0
+
+    if x0 is None:
+        x0 = np.zeros(J.n)
+    import scipy.optimize as sopt
+    J.init(x0)
+    return sopt.minimize(J.__call__, x0, jac=J.jac, hessp=J.hess_dot,
+                         method=method, tol=tol, options=options,
+                         callback=print_info)
+

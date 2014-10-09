@@ -60,7 +60,6 @@ def conj_grad_solve(A, b, P=None, x_0=None,
 
         if (norm <= abs_tol) or (norm_div_norm_b < rel_tol[0]):
             break
-
         v = A.dot(p)
         pAp = np.dot(v, p)
         if pAp <= 0:  # negative curvature
@@ -71,7 +70,6 @@ def conj_grad_solve(A, b, P=None, x_0=None,
         x += lambd * p
         i += 1
         r -= lambd * v
-
         z = P.dot(r)
         new_alpha = np.dot(r, z)
         p *= new_alpha / alpha
@@ -162,3 +160,18 @@ def conj_grad_tall_solve(A, bs, P=None, x_0=None,
             np.asarray([la.norm(r) for r in rs.T]) / norms_b, norms_b)
 
     return xs
+
+
+def conj_grad_minimize(J, x_0=None,
+                       max_iter=-1, abs_tol=1e-20, rel_tol=1e-20,
+                       verbose=False):
+    import jutil.operator as op
+    import jutil.preconditioner as pr
+    if x_0 is None:
+        x_0 = np.zeros(J.n)
+    b = -J.jac(x_0)
+    A = op.CostFunctionOperator(J, x_0)
+    P = pr.CostFunctionPreconditioner(J, x_0)
+    return conj_grad_solve(A, b, P=P,
+                           max_iter=max_iter, abs_tol=abs_tol, rel_tol=rel_tol, verbose=verbose)
+

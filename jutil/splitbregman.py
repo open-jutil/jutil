@@ -29,7 +29,7 @@ def split_bregman_2d(A, D, y, weight=100, max_iter=300, mu=0.01, lambd=1, rel_ch
 
     it, error = 0, np.inf
     print_info(u)
-    while error > rel_change_tol and it <= it_max:
+    while error > rel_change_tol and it <= max_iter:
         u_last = u
 
         rhs = (mu / lambd) * A.T.dot(y) + D.T.dot(d - b)

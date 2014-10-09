@@ -1,7 +1,6 @@
 import numpy as np
 from numpy.testing import assert_almost_equal
 from jutil.cg import *
-from jutil.lsqr import *
 from jutil.cgne import *
 
 
