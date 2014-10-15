@@ -79,7 +79,7 @@ class Minimizer(object):
             disq = np.dot(x_step, b) / J.n
 
             # Discrepancy principle
-            converged["discrepancy_principle_tau"] = (J.chisq_m <= self._conv["discrepancy_principle_tau"] ** 2)
+            converged["discrepancy_principle_tau"] = (J.chisq_m < self._conv["discrepancy_principle_tau"] ** 2)
 
             # Convergence test based on reduction of cost function...
             converged["min_costfunction_reduction"] = 100. * abs(1. - chisq / chisq_old) <= self._conv["min_costfunction_reduction"]
@@ -160,12 +160,15 @@ class LevenbergMarquardtPredictorStepper(LevenbergMarquardtAbstractBase):
 
 
 class SteepestDescentStepper(object):
-    def __init__(self):
-        pass
+    def __init__(self, preconditioner=None):
+        if preconditioner:
+            self._preconditioner = preconditioner
+        else:
+            self._preconditioner = lambda x: x
 
     def __call__(self, J, b, x_i):
         chisq_old = J.chisq
-        _, _, x_new = lnsrch(x_i, chisq_old, -b, b, J)
+        _, _, x_new = lnsrch(x_i, chisq_old, -b, self._preconditioner(b), J)
         return x_new - x_i
 
 
@@ -230,6 +233,9 @@ class TruncatedCGQuasiNewtonStepper(object):
 
 
 class TrustRegionTruncatedCGQuasiNewtonStepper(object):
+    """
+    \todo newton requires dampening (p - 1) for l_p normed cost functions?
+    """
     def __init__(self, conv_rel=1e-4, factor=10, cg_max_iter=-1):
         self._conv_rel_init = conv_rel
         self._conv_rel = self._conv_rel_init
@@ -270,7 +276,7 @@ class TrustRegionTruncatedCGQuasiNewtonStepper(object):
         return x_step
 
 
-def minimize(J, x0, method="TrustRegionTruncatedCGQuasiNewton", options=None, tol=None):
+def minimize(J, x0, method="TrustRegionTruncatedCGQuasiNewton", options={}, tol={}):
     """
     Front-end for JUTIL non-linear minimization.
 

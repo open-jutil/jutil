@@ -9,6 +9,7 @@ class CostFunction(object):
     def __init__(self, A, D, y, lambd):
         self._A, self._D, self._y, self._lambda = A, D, y, lambd
         self.m, self.n = A.shape
+        self._norm = norms.WeightedTVNorm(norms.NormLPPow(1.01, 1e-5), self._D, [self.n, 2 * self.n])
 
     def init(self, x_i):
         self.__call__(x_i)
@@ -21,10 +22,10 @@ class CostFunction(object):
         return self._chisq
 
     def jac(self, x):
-        return 2. * (self._A.T.dot(self._A.dot(x) - self._y) + self._lambda * self._D.T.dot(self._D.dot(x))) / self.m
+        return 2. * (self._A.T.dot(self._A.dot(x) - self._y) + self._lambda * self._norm.jac(x)) / self.m
 
     def hess_dot(self, _, vec):
-        return 2. * (self._A.T.dot(self._A.dot(vec)) + self._lambda * self._D.T.dot(self._D.dot(vec))) / self.m
+        return 2. * (self._A.T.dot(self._A.dot(vec)) + self._lambda * self._norm.hess_dot(x, vec)) / self.m
 
     @property
     def chisq(self):

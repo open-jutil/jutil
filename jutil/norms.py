@@ -231,8 +231,8 @@ class WeightedNorm(object):
         return temp2.dot(self._weight)
 
     def hess_dot(self, x, vec):
-        w_dot_vec = self._weight * vec
-        w_dot_x = self._weight * x
+        w_dot_vec = self._weight.dot(vec)
+        w_dot_x = self._weight.dot(x)
         temp = self._base.hess_dot(w_dot_x, w_dot_vec)
         return self._weight.T.dot(temp)
 
