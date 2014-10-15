@@ -37,8 +37,8 @@ class Ekblom(BaseNorm):
         return self._p * pow(x ** 2 + self._eps, self._p / 2. - 1.) * x
 
     def hess_diag(self, x):
-        return p * ((p - 2.) * pow(x ** 2 + eps, p / 2. - 2.) * (x ** 2) +
-                    pow(x ** 2 + eps, p / 2. - 1.))
+        return self._p * ((self._p - 2.) * pow(x ** 2 + self._eps, self._p / 2. - 2.) * (x ** 2) +
+                    pow(x ** 2 + self._eps, self._p / 2. - 1.))
 
     def hess_dot(self, x, vec):
         return self.hess_diag(x) * vec
@@ -65,7 +65,7 @@ class BiSquared(BaseNorm):
         return self.hess_diag(x) * vec
 
 
-class WeightedTVNorm(object):
+class WeightedTV(object):
     def __init__(self, basenorm, weight, indices):
         self._base = basenorm
         self._weight = weight
@@ -162,7 +162,7 @@ class WeightedTVNorm(object):
         return temp#self._weight.T.dot(temp)
 
 
-class NormL2Square(object):
+class L2Square(object):
     """
     Norm is ||x||_2^2 = \sum_i |x_i|^2
     """
@@ -183,7 +183,7 @@ class NormL2Square(object):
         return 2 * np.ones_like(x)
 
 
-class NormLPPow(BaseNorm):
+class LPPow(BaseNorm):
     """
     Norm is ||x||_p = (\sum_i |x_i|^p)
 
@@ -204,6 +204,43 @@ class NormLPPow(BaseNorm):
     def hess_diag(self, x):
         return (self._p * pow(x ** 2 + self._eps, self._p / 2. - 2) *
                 ((self._p - 1) * (x ** 2) + self._eps))
+
+
+class L1(BaseNorm):
+    """
+    Norm is ||x||_1 = (\sum_i |x_i|)
+    """
+
+    def __init__(self):
+        self._p = 1
+
+    def __call__(self, x):
+        return np.sum(np.abs(x))
+
+    def jac(self, x):
+        return np.sign(x)
+
+    def hess_diag(self, x):
+        return np.zeros_like(x)
+
+
+class LInf(BaseNorm):
+    """
+    Norm is ||x||_inf = (\max_i |x_i|)
+    """
+
+    def __init__(self):
+        self._p = np.inf
+
+    def __call__(self, x):
+        return np.max(np.abs(x))
+
+    def jac(self, x):
+        abs_x = np.abs(x)
+        return np.where(abs_x == abs_x.max(), np.sign(x), np.zeros_like(x))
+
+    def hess_diag(self, x):
+        return np.zeros_like(x)
 
 
 class WeightedNorm(object):

@@ -51,16 +51,19 @@ def execute_minimizer(max_it, stepper):
     optimize.update_tolerances({"max_iteration": max_it})
     assert_almost_equal(optimize(J, 0.5 * np.ones(J.n)), J._x_t)
 
+
 def execute_minimize(max_it, method, options):
     J = CostFunction()
     x0 =  0.5 * np.ones(J.n)
     result = mini.minimize(J, x0, method=method, options=options, tol={"max_iteration": max_it})
     assert_almost_equal(result, J._x_t)
 
+
 def execute_scipy(method):
     J = CostFunction()
     res = mini.scipy_minimize(J, 0.5 * np.ones(J.n), tol=1e-12, method=method)
     assert_almost_equal(res.x, J._x_t)
+
 
 for maxit, stepper, options in [
             (1000, "SteepestDescent", {}),
@@ -89,7 +92,7 @@ for method in [
         "trust-ncg",
         ]:
     current_module = __import__(__name__)
-    test_function = lambda : execute_scipy(method)
+    test_function = (lambda y: lambda : execute_scipy(y))(method)
     test_function.__name__ = "test_scipy_" + method
     setattr(current_module, test_function.__name__, test_function)
 
