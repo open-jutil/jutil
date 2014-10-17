@@ -3,7 +3,7 @@ import numpy.linalg as la
 from jutil.lnsrch import lnsrch
 from jutil.operator import CostFunctionOperator
 import jutil.cg as cg
-
+import logging
 
 def get_chi_square_probability(chisq, N):
     import scipy.special
@@ -28,6 +28,7 @@ class Minimizer(object):
             "min_normalized_stepsize": 0,
             "max_iteration": 10,
         }
+        self._log = logging.getLogger(__name__ + ".Minimizer")
 
     def update_tolerances(self, tol):
         assert all([key in self._conv for key in tol]), tol
@@ -35,13 +36,12 @@ class Minimizer(object):
 
 
     def _print_info(self, it, J, disq, normb):
-        print "it= {it} / chi^2/m= {chisq} (meas= {chisqm} / apr= {chisqa} ) / d_i^2/n= {disq} / |J'|= {normb} / Q= {prob}".format(
+        self._log.info("it= {it} / chi^2/m= {chisq} (meas= {chisqm} / apr= {chisqa} ) / d_i^2/n= {disq} / |J'|= {normb} / Q= {prob}".format(
             it=it, chisq=J.chisq, chisqm=J.chisq_m,
             chisqa=J.chisq_a, disq=disq, normb=normb,
-            prob=get_chi_square_probability(J.chisq * J.m, J.m))
+            prob=get_chi_square_probability(J.chisq * J.m, J.m)))
 
     def __call__(self, J, x_0):
-        print self._conv
         x_i = x_0.copy()
 
         J.init(x_i)
@@ -59,7 +59,7 @@ class Minimizer(object):
             b = -J.jac(x_i)
 
             if la.norm(b) <= self._conv["min_costfunction_gradient"]:
-                print "Convergence criteria reached [\"min_costfunction_gradient\"]"
+                self._log.info("Convergence criteria reached [\"min_costfunction_gradient\"]")
                 break
 
             self._print_info(it, J, disq, la.norm(b))
@@ -88,7 +88,7 @@ class Minimizer(object):
             converged["max_iteration"]= it >= self._conv["max_iteration"]
 
             if any(converged.values()):
-                print "Convergence criteria reached. " + str([x for x in converged if converged[x]])
+                self._log.info("Convergence criteria reached. " + str([x for x in converged if converged[x]]))
                 break
         b = -J.jac(x_i)
         self._print_info(it, J, disq, la.norm(b))
@@ -105,6 +105,7 @@ class LevenbergMarquardtAbstractBase(object):
         self._cg_max_iter = cg_max_iter
         self._cg_tol_rel = cg_tol_rel
         self._cg_tol_abs = cg_tol_abs
+        self._log = logging.getLogger(__name__ + ".LevenbergMarquardt")
 
     def init(self):
         self._lmpar = self._lmpar_init
@@ -123,10 +124,10 @@ class LevenbergMarquardtReductionStepper(LevenbergMarquardtAbstractBase):
                 self._lmpar *= self._lmpar_factor
                 if self._lmpar > 1e30:
                     raise RuntimeError("Retrieval failed (levenberg marquardt parameter too large)! i" + repr(self._lmpar))
-                print "Increasing lmpar to {} ({}>{})".format(self._lmpar, chisq, chisq_old)
+                self._log.info("Increasing lmpar to {} ({}>{})".format(self._lmpar, chisq, chisq_old))
             else:
                 self._lmpar /= self._lmpar_factor
-                print "Decreasing lmpar to {} ({}<{})".format(self._lmpar, chisq, chisq_old)
+                self._log.info("Decreasing lmpar to {} ({}<{})".format(self._lmpar, chisq, chisq_old))
 
                 return x_step
 
@@ -150,11 +151,11 @@ class LevenbergMarquardtPredictorStepper(LevenbergMarquardtAbstractBase):
                 self._lmpar *= self._lmpar_factor
                 if self._lmpar > 1e30:
                     raise RuntimeError("Retrieval failed (levenberg marquardt parameter too large)! i" + repr(self._lmpar))
-                print "Increasing lmpar to {} ({}<0.25)".format(self._lmpar, chisq_factor)
+                self._log.info("Increasing lmpar to {} ({}<0.25)".format(self._lmpar, chisq_factor))
             else:
                 if chisq_factor > 0.5:
                     self._lmpar /= self._lmpar_factor
-                    print "Decreasing lmpar to {} ({}>0.5)".format(self._lmpar, chisq_factor)
+                    self._log.info("Decreasing lmpar to {} ({}>0.5)".format(self._lmpar, chisq_factor))
             if delta_chisq <= 0:
                 return x_step
 
@@ -241,6 +242,7 @@ class TrustRegionTruncatedCGQuasiNewtonStepper(object):
         self._conv_rel = self._conv_rel_init
         self._factor = factor
         self._cg_max_iter = cg_max_iter
+        self._log = logging.getLogger(__name__ + ".TrustRegionTruncatedCGQuasiNewton")
 
     def _get_err_rels(self):
         result = [self._conv_rel]
@@ -265,14 +267,14 @@ class TrustRegionTruncatedCGQuasiNewtonStepper(object):
                 continue
 
             if chisq > chisq_old and i + 1 == len(x_steps):
-                print "  CG steps exhausted. Employing line search."
+                self._log.info("  CG steps exhausted. Employing line search.")
                 _, chisq, x_new = lnsrch(x_i, chisq_old, -b, x_step, J)
                 x_step = x_new - x_i
                 self._conv_rel = 1. / self._factor
             else:
                 self._conv_rel = err_rels[i] / self._factor
             break
-        print "  Decreasing reltol to {} ({}<{})".format(self._conv_rel, chisq, chisq_old)
+        self._log.info("  Decreasing reltol to {} ({}<{})".format(self._conv_rel, chisq, chisq_old))
         return x_step
 
 
@@ -310,10 +312,11 @@ def scipy_minimize(J, x0, method=None, options=None, tol=None):
     """
     Wrapper around scipy.optimize. Tested are "BFGS", "Newton-CG", "CG", and "trust-ncg".
     """
+    log = logging.getLogger(__name__)
     def print_info(x_i):
-        print "it= {it} / chi^2/m= {chisq} (meas= {chisqm} / apr= {chisqa} ) / |J'|= {normb}".format(
+        log.info("it= {it} / chi^2/m= {chisq} (meas= {chisqm} / apr= {chisqa} ) / |J'|= {normb}".format(
             it=print_info.it, chisq=J.chisq, chisqm=J.chisq_m,
-            chisqa=J.chisq_a, normb=la.norm(J.jac(x_i)))
+            chisqa=J.chisq_a, normb=la.norm(J.jac(x_i))))
         print_info.it += 1
     print_info.it = 0
 

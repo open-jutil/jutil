@@ -1,5 +1,8 @@
 import numpy as np
 import numpy.linalg as la
+import logging
+
+LOG = logging.getLogger(__name__)
 
 
 def conj_grad_solve(A, b, P=None, x_0=None,
@@ -60,6 +63,9 @@ def conj_grad_solve(A, b, P=None, x_0=None,
 
         if (norm <= abs_tol) or (norm_div_norm_b < rel_tol[0]):
             break
+        LOG.debug("CG, it={}, reduced to {} {}".format(
+            i, norm, norm / norm_b, norm_b))
+
         v = A.dot(p)
         pAp = np.dot(v, p)
         if pAp <= 0:  # negative curvature
@@ -78,9 +84,9 @@ def conj_grad_solve(A, b, P=None, x_0=None,
         alpha = new_alpha
 
     if verbose:
-        print "CG needed {}{} iterations to reduce to {} {}".format(
+        LOG.info("CG needed {}{} iterations to reduce to {} {}".format(
             ("max=" if (i == max_iter) else ""), i, la.norm(r),
-            la.norm(r) / norm_b, norm_b)
+            la.norm(r) / norm_b))
 
     for j in [_j for _j in range(len(rel_tol)) if rel_tol[_j] != -1]:
         xs[j] = x.copy()
@@ -139,6 +145,10 @@ def conj_grad_tall_solve(A, bs, P=None, x_0=None,
         if np.all((norms < abs_tol) | (norm_div_norm_b < rel_tol)):
             break
 
+        LOG.debug("CG, it={}, reduced to {} {}".format(
+            i, la.norm(rs),
+            np.asarray([la.norm(r) for r in rs.T]) / norms_b, norms_b))
+
         vs = A.dot(ps)
         vs_dot_ps = np.einsum('ij,ij->j', vs, ps)
         lambds = np.asarray([alphas[j] / vs_dot_ps[j] if norms[j] != 0 else 0 for j in range(len(alphas))])
@@ -155,9 +165,9 @@ def conj_grad_tall_solve(A, bs, P=None, x_0=None,
         alphas[alphas == 0] = 1
 
     if verbose:
-        print "CG needed {}{}  iterations to reduce to {} {}".format(
+        LOG.info("CG needed {}{}  iterations to reduce to {} {}".format(
             ("max=" if (i == max_iter) else  ""), i, la.norm(rs),
-            np.asarray([la.norm(r) for r in rs.T]) / norms_b, norms_b)
+            np.asarray([la.norm(r) for r in rs.T]) / norms_b, norms_b))
 
     return xs
 

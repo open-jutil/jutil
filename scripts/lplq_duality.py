@@ -3,7 +3,9 @@ import jutil.lnsrch as lnsrch
 from jutil.minimizer import minimize
 import numpy as np
 import numpy.linalg as la
+import logging
 
+logging.basicConfig(level=logging.INFO)
 n = 100
 p = 1.1
 q = 1. / (1. - (1. / p))
@@ -42,8 +44,8 @@ class CostFunction(object):
 
 A = np.diag(np.random.random(n))
 AI = np.asarray(np.asmatrix(A).I)
-lp = norms.NormLPPow(p, 1e-20)
-lq = norms.NormLPPow(q, 1e-20)
+lp = norms.LPPow(p, 1e-20)
+lq = norms.LPPow(q, 1e-20)
 
 lAp = norms.WeightedNorm(lp, A)
 lAq = norms.WeightedNorm(lq, AI.T)

@@ -1,5 +1,8 @@
 import numpy as np
 import numpy.linalg as la
+import logging
+
+LOG = logging.getLogger(__name__)
 
 
 def split_bregman_2d(A, D, y, weight=100, max_iter=300, mu=0.01, lambd=1, rel_change_tol=1e-6, isotropic=True):
@@ -23,9 +26,9 @@ def split_bregman_2d(A, D, y, weight=100, max_iter=300, mu=0.01, lambd=1, rel_ch
         chisq_m = np.dot(dy, dy) / m
         chisq_a = (lambd / mu) * sum(np.hypot(*np.split(D.dot(vector), 2))) / m
         chisq = chisq_m + chisq_a
-        print "it= {it} / chi^2/m= {chisq} (meas= {chisqm} / apr= {chisqa} ) / {err}".format(
-                it=it, chisq=chisq, chisqm=chisq_m,
-                chisqa=chisq_a, err=error)
+        LOG.info("it= {it} / chi^2/m= {chisq} (meas= {chisqm} / apr= {chisqa} ) / {err}".format(
+                 it=it, chisq=chisq, chisqm=chisq_m,
+                 chisqa=chisq_a, err=error))
 
     it, error = 0, np.inf
     print_info(u)

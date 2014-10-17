@@ -1,4 +1,6 @@
 import time
+import logging
+
 
 class TakeTime(object):
     """
@@ -16,15 +18,16 @@ class TakeTime(object):
     """
 
     def __init__(self, name):
-        self.name = name
+        self._name = name
         self.msg = ""
+        self._log = logging.getLogger(__name__)
 
     def __enter__(self):
         self.t0 = time.time()
         return self
 
     def __exit__(self, type, value, traceback):
-        print("%s: %.3f sec    %s" % (self.name, self.dt, self.msg))
+        self._log.info("{}: {:.3f} sec    {}".format(self._name, self.dt, self.msg))
 
     @property
     def dt(self):

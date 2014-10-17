@@ -1,5 +1,9 @@
 import numpy as np
 import numpy.linalg as la
+import logging
+
+LOG = logging.getLogger(__name__)
+
 
 def lsqr_solve(A, b, P=None, x_0=None,
                max_iter=-1, abs_tol=1e-20, rel_tol=1e-20, rel_change_tol=1e-20,
@@ -126,12 +130,13 @@ def lsqr_solve(A, b, P=None, x_0=None,
             (norm_ATr < rel_tol * norm_ATb) or
             (rel_change < rel_change_tol)):
             break
+        LOG.debug("LSQR, it={} iterations to reduce to {} {} {} {}".format(
+            i, phi_bar, norm_ATr, norm_ATr / norm_ATb, rel_change))
 
         phi_bar_old = phi_bar
 
     x = P.dot(x)
-    if verbose:
-        print "LSQR needed {}{} iterations to reduce to {} {} {} {}".format(
+    LOG.info("LSQR needed {}{} iterations to reduce to {} {} {} {}".format(
             ("max=" if (i == max_iter) else ""), i, phi_bar,
-            norm_ATr, norm_ATr / norm_ATb, rel_change)
+            norm_ATr, norm_ATr / norm_ATb, rel_change))
     return x
