@@ -22,9 +22,10 @@ def hess(norm, x):
 
 
 def execute_norm(norm):
-    x = np.arange(1, 6)[::-1]
+    x = np.arange(1., 6.)[::-1]
     assert_almost_equal(fd_jac(norm, x), norm.jac(x), decimal=5)
     assert_almost_equal(fd_hess(norm, x), hess(norm, x), decimal=5)
+    assert_almost_equal(np.diag(hess(norm, x)), norm.hess_diag(x), decimal=5)
 
 
 def test_tv():
@@ -36,7 +37,7 @@ def test_tv():
     W[5, 3] = 1
     norm = WeightedTV(LPPow(1., 0), W, [2, 4])
 
-    x = 1 + np.arange(4)
+    x = 1 + np.arange(4.)
 
     assert_almost_equal(fd_jac(norm, x), norm.jac(x))
     assert_almost_equal(fd_hess(norm, x), hess(norm, x))
@@ -54,7 +55,7 @@ def test_tv():
     assert_almost_equal(S1, S2)
 
 
-weight = np.arange(25).reshape(5, 5) / 25.
+weight = sp.csr_matrix(np.arange(25).reshape(5, 5) / 25.)
 for name, norm in [
         ("L1", L1()),
         ("L2Square", L2Square()),

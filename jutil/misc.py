@@ -1,11 +1,17 @@
 import numpy as np
 
 def get_lena_256():
+    """
+    Returns the center of the lena image.
+    """
     import scipy.misc
     return scipy.misc.lena()[384:128:-1, 128:384]
 
 
 def get_phantom_1():
+    """
+    Returns a 256x256 test phantom.
+    """
     image = 50 * np.ones((256, 256))
     image[:] += (np.arange(256) / 10.)[:, np.newaxis]
     image[:] += (np.arange(256) / 10.)[np.newaxis, :]

@@ -184,4 +184,3 @@ def conj_grad_minimize(J, x_0=None,
     P = pr.CostFunctionPreconditioner(J, x_0)
     return conj_grad_solve(A, b, P=P,
                            max_iter=max_iter, abs_tol=abs_tol, rel_tol=rel_tol, verbose=verbose)
-

@@ -17,16 +17,16 @@ def cgne_solve(A, b, P=None, x_0=None,
         max_iter = 2 * A.shape[1]
 
     p = A.T.dot(b)
-    norm_ATb = la.norm(p);
+    norm_ATb = la.norm(p)
     r = b - A.dot(x)
     t = A.T.dot(r)
     p = P.dot(t)
     s = p
-    alpha = np.dot(s, s);
+    alpha = np.dot(s, s)
 
     i = 0
     while i <= max_iter:
-        norm = la.norm(t);
+        norm = la.norm(t)
         if (norm < abs_tol) or (norm / norm_ATb < rel_tol):
             break
 

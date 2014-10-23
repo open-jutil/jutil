@@ -66,6 +66,13 @@ class BiSquared(BaseNorm):
 
 
 class WeightedTV(object):
+    """
+    Provides a TV norm if a proper weight matrix is supplied.
+    It is assumed that the first elements of the weight-vector product represents the partial
+    derivatives, whereas elements 0 to indices[0] - 1 are the partial derivative with respect
+    to the first dimension, the elements indices[0] to indices[1] - 1 the partial derivative
+    with respect to the second dimension and so on.
+    """
     def __init__(self, basenorm, weight, indices):
         self._base = basenorm
         self._weight = weight
@@ -78,7 +85,7 @@ class WeightedTV(object):
         i0 = 0
         tv = np.zeros(self._indices[1])
         for i1 in self._indices[1:]:
-            tv +=  xp[i0:i1] ** 2
+            tv += xp[i0:i1] ** 2
             i0 = i1
         tv = np.sqrt(tv)
         return np.concatenate([tv, xp[self._indices[-1]:]])
@@ -273,28 +280,18 @@ class WeightedNorm(object):
         temp = self._base.hess_dot(w_dot_x, w_dot_vec)
         return self._weight.T.dot(temp)
 
-    def hess_diag(x):
+    def hess_diag(self, x):
         w_dot_x = self._weight.dot(x)
         base_hess_diagonal = self._base.hess_diag(w_dot_x)
-        assert False
-"""
-    // weight^T hess weight
-    la::DenseVector base_hess_diagonal = this->base_norm_->hess_diag(temp);
-    result.clear();
-
-    auto M_end = la::getCMajorIteratorEnd(this->weight_);
-    for (auto M = la::getCMajorIteratorBegin(this->weight_); M != M_end; ++ M) {
-      auto m_end = M.end();
-      for (auto m = M.begin(); m != m_end; ++ m) {
-        jassert(m.index2() < result.size(), m.index1() << " " << result.size());
-        jassert(m.index1() < base_hess_diagonal.size(),
-                m.index1() << " " << base_hess_diagonal.size());
-        result(m.index2()) += base_hess_diagonal(m.index1()) * pow2(*m);
-      }
-    }
-  }
-"""
-
+        if type(self._weight) is sp.csr_matrix:
+            result = np.zeros(x.shape)
+            for row_idx in range(self._weight.shape[0]):
+                row = self._weight.getrow(row_idx)
+                data = base_hess_diagonal[row_idx] * (row.data ** 2)
+                result[row.indices] += data
+            return result
+        else:
+            raise NotImplemented
 
 class WeightedL2Square(object):
     """
@@ -321,4 +318,4 @@ class WeightedL2Square(object):
         return 2 * self._weight.T.dot(self._weight.dot(vec))
 
     def hess_diag(self, x):
-        return np.diagonal(self.hess(x))
+        return self.hess(x).diagonal()

@@ -2,8 +2,10 @@ import numpy as np
 import numpy.linalg as la
 from jutil.lnsrch import lnsrch
 from jutil.operator import CostFunctionOperator
+from jutil.preconditioner import CostFunctionPreconditioner
 import jutil.cg as cg
 import logging
+
 
 def get_chi_square_probability(chisq, N):
     import scipy.special
@@ -19,6 +21,9 @@ def get_chi_square_probability(chisq, N):
 
 
 class Minimizer(object):
+    """
+    Class for computing non-linear minima of cost functions.
+    """
     def __init__(self, stepper):
         self._stepper = stepper
         self._conv = {
@@ -31,20 +36,36 @@ class Minimizer(object):
         self._log = logging.getLogger(__name__ + ".Minimizer")
 
     def update_tolerances(self, tol):
+        """
+        Allows to set convergence criteria. Options are
+
+        min_costfunction_gradient: Terminate if the gradient of the cost function falls
+            below this limit.
+        discrepancy_principle_tau: Terminate if the norm of the discrepancy of the
+            measurements falls below this limit (in effect chi^2_m < tau^2) is cheched.
+        min_costfunction_reduction: Terminate if the relative reduction of the cost
+            function in one iteration falls below this limit (given in percent).
+        min_normalized_stepsize: Terminate if the scalar product between step in state
+            space and the current gradient of the cost function divided by the number of
+            state space elements falls below this number.
+        max_iteration: Terminate if the number of iterations surpasses this limit.
+        """
         assert all([key in self._conv for key in tol]), tol
         self._conv.update(tol)
 
-
     def _print_info(self, it, J, disq, normb):
-        self._log.info("it= {it} / chi^2/m= {chisq} (meas= {chisqm} / apr= {chisqa} ) / d_i^2/n= {disq} / |J'|= {normb} / Q= {prob}".format(
-            it=it, chisq=J.chisq, chisqm=J.chisq_m,
-            chisqa=J.chisq_a, disq=disq, normb=normb,
+        details = ""
+        if hasattr(J, "chisq_m") and hasattr(J, "chisq_a"):
+            details = "(meas= {chisqm} / apr= {chisqa} )".format(chisqm=J.chisq_m, chisqa=J.chisq_a)
+        self._log.info("it= {it} / chi^2/m= {chisq} {details} / d_i^2/n= {disq} / |J'|= {normb} / Q= {prob}".format(
+            it=it, chisq=J.chisq, details=details, disq=disq, normb=normb,
             prob=get_chi_square_probability(J.chisq * J.m, J.m)))
 
     def __call__(self, J, x_0):
         x_i = x_0.copy()
 
-        J.init(x_i)
+        if hasattr(J, "init"):
+            J.init(x_i)
 
         if hasattr(self._stepper, "init"):
             self._stepper.init()
@@ -78,14 +99,15 @@ class Minimizer(object):
             # normalize step size in state space
             disq = np.dot(x_step, b) / J.n
 
-            # Discrepancy principle
-            converged["discrepancy_principle_tau"] = (J.chisq_m < self._conv["discrepancy_principle_tau"] ** 2)
-
-            # Convergence test based on reduction of cost function...
-            converged["min_costfunction_reduction"] = 100. * abs(1. - chisq / chisq_old) <= self._conv["min_costfunction_reduction"]
-            # Convergence test on normalized step size
-            converged["min_normalized_stepsize"] = disq <= self._conv["min_normalized_stepsize"]
-            converged["max_iteration"]= it >= self._conv["max_iteration"]
+            if hasattr(J, "chisq_m"):
+                converged["discrepancy_principle_tau"] = (
+                    J.chisq_m < self._conv["discrepancy_principle_tau"] ** 2)
+            converged.update({
+                "min_costfunction_reduction":
+                    100. * abs(1. - chisq / chisq_old) <= self._conv["min_costfunction_reduction"],
+                "min_normalized_stepsize":
+                    disq <= self._conv["min_normalized_stepsize"],
+                "max_iteration": it >= self._conv["max_iteration"]})
 
             if any(converged.values()):
                 self._log.info("Convergence criteria reached. " + str([x for x in converged if converged[x]]))
@@ -161,32 +183,28 @@ class LevenbergMarquardtPredictorStepper(LevenbergMarquardtAbstractBase):
 
 
 class SteepestDescentStepper(object):
-    def __init__(self, preconditioner=None):
-        if preconditioner:
-            self._preconditioner = preconditioner
-        else:
-            self._preconditioner = lambda x: x
+    def __init__(self, preconditioner=lambda _, x: x):
+        self._preconditioner = preconditioner
 
     def __call__(self, J, b, x_i):
         chisq_old = J.chisq
-        _, _, x_new = lnsrch(x_i, chisq_old, -b, self._preconditioner(b), J)
+        _, _, x_new = lnsrch(x_i, chisq_old, -b, self._preconditioner(x_i, b), J)
         return x_new - x_i
 
 
 class CauchyPointSteepestDescentStepper(object):
-    def __init__(self):
-        pass
+    def __init__(self, preconditioner=lambda _, x: x):
+        self._preconditioner = preconditioner
 
     def __call__(self, J, b, x_i):
         chisq_old = J.chisq
         # This computes the optimal distance along the steepest descent
         # direction
-        direc = (np.dot(b, b) / np.dot(J.hess_dot(x_i, b), b)) * b
+        p = self._preconditioner(x_i, b)
+        direc = (np.dot(b, p) / np.dot(J.hess_dot(x_i, p), p)) * p
         _, _, x_new = lnsrch(x_i, chisq_old, -b, direc, J)
 
-        x_step = x_new - x_i
-
-        return x_step
+        return x_new - x_i
 
 
 class GaussNewtonStepper(object):
@@ -207,9 +225,8 @@ class GaussNewtonStepper(object):
         if np.dot(x_step, b) == 0:
             return np.zeros_like(x_step)
         _, _, x_new = lnsrch(x_i, chisq_old, -b, x_step, J)
-        x_step = x_new - x_i
 
-        return x_step
+        return x_new - x_i
 
 
 class TruncatedCGQuasiNewtonStepper(object):
@@ -228,9 +245,8 @@ class TruncatedCGQuasiNewtonStepper(object):
             CostFunctionOperator(J, x_i), b,
             max_iter=self._cg_max_iter, abs_tol=self._cg_tol_abs, rel_tol=eps)
         _, _, x_new = lnsrch(x_i, chisq_old, -b, x_step, J)
-        x_step = x_new - x_i
 
-        return x_step
+        return x_new - x_i
 
 
 class TrustRegionTruncatedCGQuasiNewtonStepper(object):
@@ -259,6 +275,7 @@ class TrustRegionTruncatedCGQuasiNewtonStepper(object):
         err_rels = self._get_err_rels()
         x_steps = cg.conj_grad_solve(
             CostFunctionOperator(J, x_i), b,
+            P=CostFunctionPreconditioner(J, x_i),
             max_iter=self._cg_max_iter, rel_tol=err_rels, abs_tol=0, verbose=True)
         for i, x_step in enumerate(x_steps):
             x_new = x_i + x_step
@@ -282,12 +299,6 @@ def minimize(J, x0, method="TrustRegionTruncatedCGQuasiNewton", options={}, tol=
     """
     Front-end for JUTIL non-linear minimization.
 
-    J: CostFunction
-    x0: inital guess
-    method: String determining method
-    options: Additional parameters for the chosen method
-    tol: convergence options for the Outer loop
-
     Supported methods are
     * SteepestDescent
     * CauchyPointSteepestDescent
@@ -297,7 +308,15 @@ def minimize(J, x0, method="TrustRegionTruncatedCGQuasiNewton", options={}, tol=
     * TruncatedCGQuasiNewton
     * TrustRegionTruncatedCGQuasiNewton(default)
 
+    Attributes
+    ----------
+    J: CostFunction
+    x0: inital guess
+    method: String determining method
+    options: Additional parameters for the chosen method
+    tol: convergence options for the outer loop
     """
+
     current_module = __import__(__name__)
     try:
         meth = globals()[method + "Stepper"]
@@ -311,6 +330,14 @@ def minimize(J, x0, method="TrustRegionTruncatedCGQuasiNewton", options={}, tol=
 def scipy_minimize(J, x0, method=None, options=None, tol=None):
     """
     Wrapper around scipy.optimize. Tested are "BFGS", "Newton-CG", "CG", and "trust-ncg".
+
+    Attributes
+    ----------
+    J: CostFunction
+    x0: inital guess
+    method: String determining method
+    options: Additional parameters for the chosen method
+    tol: convergence options for the outer loop
     """
     log = logging.getLogger(__name__)
     def print_info(x_i):

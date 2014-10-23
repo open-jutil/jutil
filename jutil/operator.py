@@ -2,6 +2,11 @@ import numpy as np
 
 
 class CostFunctionOperator(object):
+    """
+    Wraps the hess_dot of a CostFunction in combination with a Tikhonov-Levenberg-Marquardt
+    regularisation. Used to solve the LES posed by steps in non-linear minimization.
+    May also wrap a CostFunction to provide a linear solution.
+    """
     def __init__(self, J, x, lmpar=0):
         self._J = J
         self._x = x
@@ -20,6 +25,10 @@ class CostFunctionOperator(object):
 
 
 class Identity(object):
+    """
+    An Identity operator. The dot method returns a copy of the supplied vector.
+    Implements adjoint T and inverse I properties.
+    """
     def __init__(self, n):
         self._shape = (n, n)
         self.T = self
@@ -34,6 +43,10 @@ class Identity(object):
 
 
 class Scale(object):
+    """
+    An scaling Operator. Scales supplied vectors with an given alpha. Implements
+    adjoint T and inverse I properties.
+    """
     def __init__(self, A, a, adjoint=None):
         self._A, self._a = A, a
         if adjoint is None:
@@ -41,6 +54,7 @@ class Scale(object):
                 self.T = Scale(A.T, a, adjoint=self)
         else:
             self.T = adjoint
+        self.I = self.T
 
     def dot(self, x):
         return self._a * self._A.dot(x)
@@ -51,6 +65,10 @@ class Scale(object):
 
 
 class Dot(object):
+    """
+    Produces the product of two operators (and an optional scaling).
+    Implements adjoint T property.
+    """
     def __init__(self, A, B, a=1, adjoint=None):
         self._A, self._B, self._a = A, B, a
         self.dot = self._dot if a == 1 else self._dot_a
@@ -72,6 +90,10 @@ class Dot(object):
 
 
 class Plus(object):
+    """
+    Produces the addition of the result of two operators.
+    Implenets adjoint T property.
+    """
     def __init__(self, A, B, adjoint=None):
         self._A, self._B = A, B
         assert self._A.shape == self._B.shape
@@ -90,6 +112,10 @@ class Plus(object):
 
 
 class Function(object):
+    """
+    Wraps a function (and optionally its adjoint) as operator offering the
+    dot method.
+    """
     def __init__(self, (n, m), F, FT=None, a=1, adjoint=None):
         self._F = F
         self._shape = (n, m)
@@ -113,6 +139,11 @@ class Function(object):
 
 
 class HStack(object):
+    """
+    Horizontally "stacks" a number of operators to provide an operator accepting
+    a wider input vector.
+    Implements the adjoint T property.
+    """
     def __init__(self, As, adjoint=None):
         self._As = As
         assert all([As[i].shape[0] == As[i - 1].shape[0] for i in range(1, len(As))])
@@ -134,6 +165,11 @@ class HStack(object):
 
 
 class VStack(object):
+    """
+    Vertically "stacks" a number of operators to provide an operator supplying a larger
+    result vector.
+    Implements the adjoint T property.
+    """
     def __init__(self, As, adjoint=None):
         self._As = As
         assert all([As[i].shape[1] == As[i - 1].shape[1] for i in range(1, len(As))])
