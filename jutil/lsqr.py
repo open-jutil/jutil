@@ -82,9 +82,9 @@ def lsqr_solve(A, b, P=None, x_0=None,
 
     norm_ATb = la.norm(A.T.dot(b))
     beta = la.norm(b)
-    u = b / beta
+    u = np.asarray(b) / beta
     p = A.T.dot(u)
-    v = P.dot(p)
+    v = np.asarray(P.dot(p))
     alpha = la.norm(v)
     v /= alpha
     w = v.copy()
@@ -96,12 +96,12 @@ def lsqr_solve(A, b, P=None, x_0=None,
     while i < max_iter:
         # Continue bidiagonalization
         p = P.dot(v)
-        u = -alpha * u + A.dot(p)
+        u = -alpha * u + np.asarray(A.dot(p))
         beta = la.norm(u)
         if beta > 0:
             u /= beta
             p = A.T.dot(u)
-            v = P.dot(p) - beta * v
+            v = np.asarray(P.dot(p)) - beta * v
             alpha = la.norm(v)
             if alpha > 0:
                 v /= alpha;
@@ -122,8 +122,7 @@ def lsqr_solve(A, b, P=None, x_0=None,
         w = v - (theta / rho) * w
 
         # Test for convergence, phi_bar = ||r||
-        p = P.I.dot(-1.0 * phi_bar * alpha * c * v)
-        norm_ATr = la.norm(p)
+        norm_ATr = la.norm(P.I.dot(-1.0 * phi_bar * alpha * c * v))
         rel_change = 100 * abs(1 - phi_bar / phi_bar_old)
 
         if ((norm_ATr < abs_tol) or
@@ -135,7 +134,7 @@ def lsqr_solve(A, b, P=None, x_0=None,
 
         phi_bar_old = phi_bar
 
-    x = P.dot(x)
+    x = np.asarray(P.dot(x))
     LOG.info("LSQR needed {}{} iterations to reduce to {} {} {} {}".format(
             ("max=" if (i == max_iter) else ""), i, phi_bar,
             norm_ATr, norm_ATr / norm_ATb, rel_change))

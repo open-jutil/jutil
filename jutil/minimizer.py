@@ -20,6 +20,17 @@ def get_chi_square_probability(chisq, N):
     return 100.0 * result
 
 
+def _print_info(log, it, J, disq, normb):
+    chisq_str, disq_str = "", ""
+    if hasattr(J, "chisq_m") and hasattr(J, "chisq_a"):
+        chisq_str =  "(meas= {chisqm} / apr= {chisqa} )".format(chisqm=J.chisq_m, chisqa=J.chisq_a)
+    if not np.isnan(disq):
+        disq_str = " / d_i^2/n= {disq}".format(disq)
+    log.info("it= {it} / chi^2/m= {chisq}{chisq_str}{disq_str} / |J'|= {normb} / Q= {prob}".format(
+        it=it, chisq=J.chisq, chisq_str=chisq_str, disq_str=disq_str, normb=normb,
+        prob=get_chi_square_probability(J.chisq * J.m, J.m)))
+
+
 class Minimizer(object):
     """
     Class for computing non-linear minima of cost functions.
@@ -53,14 +64,6 @@ class Minimizer(object):
         assert all([key in self._conv for key in tol]), tol
         self._conv.update(tol)
 
-    def _print_info(self, it, J, disq, normb):
-        details = ""
-        if hasattr(J, "chisq_m") and hasattr(J, "chisq_a"):
-            details = "(meas= {chisqm} / apr= {chisqa} )".format(chisqm=J.chisq_m, chisqa=J.chisq_a)
-        self._log.info("it= {it} / chi^2/m= {chisq} {details} / d_i^2/n= {disq} / |J'|= {normb} / Q= {prob}".format(
-            it=it, chisq=J.chisq, details=details, disq=disq, normb=normb,
-            prob=get_chi_square_probability(J.chisq * J.m, J.m)))
-
     def __call__(self, J, x_0):
         x_i = x_0.copy()
 
@@ -74,8 +77,8 @@ class Minimizer(object):
         it = 0
         converged = {}
         while True:
-            if hasattr(J, "updateJacobian"):
-                J.updateJacobian(x_i)
+            if hasattr(J, "update_jacobian"):
+                J.update_jacobian(x_i)
 
             b = -J.jac(x_i)
 
@@ -83,7 +86,7 @@ class Minimizer(object):
                 self._log.info("Convergence criteria reached [\"min_costfunction_gradient\"]")
                 break
 
-            self._print_info(it, J, disq, la.norm(b))
+            _print_info(self._log, it, J, disq, la.norm(b))
 
             chisq_old = J.chisq
             x_step = self._stepper(J, b, x_i)
@@ -112,8 +115,7 @@ class Minimizer(object):
             if any(converged.values()):
                 self._log.info("Convergence criteria reached. " + str([x for x in converged if converged[x]]))
                 break
-        b = -J.jac(x_i)
-        self._print_info(it, J, disq, la.norm(b))
+        _print_info(self._log, it, J, disq, la.norm(-J.jac(x_i)))
 
         return x_i
 
@@ -340,10 +342,10 @@ def scipy_minimize(J, x0, method=None, options=None, tol=None):
     tol: convergence options for the outer loop
     """
     log = logging.getLogger(__name__)
+ 
     def print_info(x_i):
-        log.info("it= {it} / chi^2/m= {chisq} (meas= {chisqm} / apr= {chisqa} ) / |J'|= {normb}".format(
-            it=print_info.it, chisq=J.chisq, chisqm=J.chisq_m,
-            chisqa=J.chisq_a, normb=la.norm(J.jac(x_i))))
+        normb = la.norm(J.jac(x_i))
+        _print_info(log, print_info.it, J, None, normb)
         print_info.it += 1
     print_info.it = 0
 

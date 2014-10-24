@@ -40,7 +40,7 @@ def conj_grad_solve(A, b, P=None, x_0=None,
         from jutil.operator import Identity
         P = Identity(A.shape[1])
 
-    x = x_0.copy() if x_0 is not None else np.zeros_like(b)
+    x = np.array(x_0, copy=True) if x_0 is not None else np.zeros_like(b)
 
     if max_iter < 1:
         max_iter = 2 * A.shape[1]

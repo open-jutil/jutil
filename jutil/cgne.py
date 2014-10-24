@@ -11,7 +11,7 @@ def cgne_solve(A, b, P=None, x_0=None,
     if P is None:
         from jutil.operator import Identity
         P = Identity(A.shape[1])
-    x = x_0 if x_0 is not None else np.zeros(A.shape[1])
+    x = np.array(x_0, copy=True) if x_0 is not None else np.zeros(A.shape[1])
 
     if max_iter < 0:
         max_iter = 2 * A.shape[1]

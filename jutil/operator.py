@@ -35,7 +35,7 @@ class Identity(object):
         self.I = self
 
     def dot(self, x):
-        return x.copy()
+        return np.array(x, copy=True)
 
     @property
     def shape(self):

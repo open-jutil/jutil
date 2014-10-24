@@ -1,5 +1,5 @@
 import numpy as np
-import scipy.sparse as sp
+import jutil.linalg
 
 
 class BaseNorm(object):
@@ -180,12 +180,6 @@ class L2Square(object):
     def jac(self, x):
         return 2 * x
 
-    def hess(self, x):
-        return np.diag(self.hess_diag(x))
-
-    def hess_dot(self, _, vec):
-        return 2 * vec
-
     def hess_diag(self, x):
         return 2 * np.ones_like(x)
 
@@ -277,21 +271,13 @@ class WeightedNorm(object):
     def hess_dot(self, x, vec):
         w_dot_vec = self._weight.dot(vec)
         w_dot_x = self._weight.dot(x)
-        temp = self._base.hess_dot(w_dot_x, w_dot_vec)
-        return self._weight.T.dot(temp)
+        return self._weight.T.dot(self._base.hess_dot(w_dot_x, w_dot_vec))
 
     def hess_diag(self, x):
         w_dot_x = self._weight.dot(x)
         base_hess_diagonal = self._base.hess_diag(w_dot_x)
-        if type(self._weight) is sp.csr_matrix:
-            result = np.zeros(x.shape)
-            for row_idx in range(self._weight.shape[0]):
-                row = self._weight.getrow(row_idx)
-                data = base_hess_diagonal[row_idx] * (row.data ** 2)
-                result[row.indices] += data
-            return result
-        else:
-            raise NotImplemented
+        return jutil.linalg.quick_diagonal_product(self._weight, base_hess_diagonal)
+
 
 class WeightedL2Square(object):
     """
@@ -318,4 +304,4 @@ class WeightedL2Square(object):
         return 2 * self._weight.T.dot(self._weight.dot(vec))
 
     def hess_diag(self, x):
-        return self.hess(x).diagonal()
+        return 2 * jutil.linalg.quick_diagonal_product(self._weight)
