@@ -6,6 +6,23 @@ class CostFunctionOperator(object):
     Wraps the hess_dot of a CostFunction in combination with a Tikhonov-Levenberg-Marquardt
     regularisation. Used to solve the LES posed by steps in non-linear minimization.
     May also wrap a CostFunction to provide a linear solution.
+
+    Parameters
+    ----------
+    J : CostFunction
+    x : vector
+    lmpar : float, optional
+        Levenberg-Marquardt Regularisation parameter. In effect lmpar times an Identity
+        matrix is added to the CostFunction. (the default is 0, i.e. no effect).
+
+    Attributes
+    ----------
+    shape : (int, int)
+
+    Methods
+    -------
+    dot(vector)
+        Provides multiplication with a vector
     """
     def __init__(self, J, x, lmpar=0):
         self._J = J
@@ -26,8 +43,26 @@ class CostFunctionOperator(object):
 
 class Identity(object):
     """
-    An Identity operator. The dot method returns a copy of the supplied vector.
-    Implements adjoint T and inverse I properties.
+    An Identity operator.
+
+    Parameters
+    ----------
+    n : int
+        dimensionality of the operator.
+
+    Attributes
+    ----------
+    shape : int, int
+        provides the shape of the operator
+    T : Identity
+        provides the transposed operator
+    I : Identity
+        provides the inverted operator
+
+    Methods
+    -------
+    dot(vector)
+        Provides multiplication with a vector
     """
     def __init__(self, n):
         self._shape = (n, n)
@@ -35,6 +70,7 @@ class Identity(object):
         self.I = self
 
     def dot(self, x):
+        assert len(x) == self.shape[1]
         return np.array(x, copy=True)
 
     @property
@@ -44,8 +80,27 @@ class Identity(object):
 
 class Scale(object):
     """
-    An scaling Operator. Scales supplied vectors with an given alpha. Implements
-    adjoint T and inverse I properties.
+    An scaling Operator.
+
+    Parameters
+    ----------
+    A : Operator
+    a : float
+    adjoint : Operator, optional
+
+    Attributes
+    ----------
+    shape : int, int
+        provides the shape of the operator
+    T : Scale
+        provides the transposed operator
+    I : Scale
+        provides the inverted operator
+
+    Methods
+    -------
+    dot(vector)
+        Provides multiplication with a vector
     """
     def __init__(self, A, a, adjoint=None):
         self._A, self._a = A, a
@@ -67,7 +122,26 @@ class Scale(object):
 class Dot(object):
     """
     Produces the product of two operators (and an optional scaling).
-    Implements adjoint T property.
+
+    Parameters
+    ----------
+    A : Operator
+    B : Operator
+    a : float, optional
+    adjoint : Operator, optional
+
+
+    Attributes
+    ----------
+    shape : int, int
+        provides the shape of the operator
+    T : Dot
+        provides the transposed operator
+
+    Methods
+    -------
+    dot(vector)
+        Provides multiplication with a vector
     """
     def __init__(self, A, B, a=1, adjoint=None):
         self._A, self._B, self._a = A, B, a
@@ -92,7 +166,24 @@ class Dot(object):
 class Plus(object):
     """
     Produces the addition of the result of two operators.
-    Implenets adjoint T property.
+
+    Parameter
+    ---------
+    A : Operator
+    B : Operator
+    adjoint : Operator, optional
+
+    Attributes
+    ----------
+    shape : int, int
+        provides the shape of the operator
+    T : Plus
+        provides the transposed operator
+
+    Methods
+    -------
+    dot(vector)
+        Provides multiplication with a vector
     """
     def __init__(self, A, B, adjoint=None):
         self._A, self._B = A, B
@@ -113,19 +204,39 @@ class Plus(object):
 
 class Function(object):
     """
-    Wraps a function (and optionally its adjoint) as operator offering the
-    dot method.
+    Wraps a function (and optionally its adjoint) as operator.
+
+    Parameters
+    ----------
+    shape : int, int
+    F : function
+    FT : function, optional
+        adjoint function, to define the adjoint operator. (default is None)
+    a : float, optional
+        optional scaling parameter. (default is 1)
+
+    Attributes
+    ----------
+    shape : int, int
+        provides the shape of the operator
+    T : Function
+        provides the transposed operator
+
+    Methods
+    -------
+    dot(vector)
+        Provides multiplication with a vector
     """
-    def __init__(self, (n, m), F, FT=None, a=1, adjoint=None):
+    def __init__(self, (n, m), F, FT=None, a=1, _adjoint=None):
         self._F = F
         self._shape = (n, m)
         self._a = a
         self.dot = self._dot if a == 1 else self._dot_a
-        if adjoint is None:
+        if _adjoint is None:
             if FT is not None:
-                self.T = Function((m, n), FT, a=a, adjoint=self)
+                self.T = Function((m, n), FT, a=a, _adjoint=self)
         else:
-            self.T = adjoint
+            self.T = _adjoint
 
     def _dot_a(self, x):
         return self._a * self._F(x)
@@ -142,7 +253,18 @@ class HStack(object):
     """
     Horizontally "stacks" a number of operators to provide an operator accepting
     a wider input vector.
-    Implements the adjoint T property.
+
+    Attributes
+    ----------
+    shape : int, int
+        provides the shape of the operator
+    T : VStack
+        provides the transposed operator
+
+    Methods
+    -------
+    dot(vector)
+        Provides multiplication with a vector
     """
     def __init__(self, As, adjoint=None):
         self._As = As
@@ -168,7 +290,18 @@ class VStack(object):
     """
     Vertically "stacks" a number of operators to provide an operator supplying a larger
     result vector.
-    Implements the adjoint T property.
+
+    Attributes
+    ----------
+    shape : int, int
+        provides the shape of the operator
+    T : HStack
+        provides the transposed operator
+
+    Methods
+    -------
+    dot(vector)
+        Provides multiplication with a vector
     """
     def __init__(self, As, adjoint=None):
         self._As = As

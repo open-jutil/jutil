@@ -1,7 +1,8 @@
+import numpy as np
 
 def _safe_inverse(vec):
     nonzero = (vec != 0)
-    result = vec.copy()
+    result = np.array(vec, copy=True)
     result[nonzero] = 1. / vec[nonzero]
     return result
 
@@ -29,7 +30,7 @@ class CostFunctionPreconditioner(object):
             self._diagonal = _safe_inverse(J.hess_diagonal(self._x_i))
             self.dot = self._dot_diag
         else:
-            self.dot = lambda x: x.copy()
+            self.dot = lambda x: np.array(x, copy=True)
 
     def _dot_diag(self, x):
         return (self._diagonal * x.T).T

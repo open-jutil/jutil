@@ -11,7 +11,8 @@ def get_diff_op(mask, axis, factor=1):
     mask : n-dimensional array indicating if an element shall be part of the difference
     axis : Indicates along which axis the difference shall be computed
     factor : Indicates that another, unmentioned dimension exists and that the true
-        vector is that much longer. Not recommended.
+             vector is that much longer. Not recommended.
+
     Returns
     -------
     Sparse Matrix containing the difference operator

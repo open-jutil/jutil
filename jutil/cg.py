@@ -17,19 +17,28 @@ def conj_grad_solve(A, b, P=None, x_0=None,
     additional Vector and uses an additional scalar-product and one
     Matrix-Vector product per iteration.
 
-    \param A is a functor defining the matrix, realising the mult() function
-      for supplying a vector to be multiplied returning the result, a cond()
-      function for supplying a vector and multiplying it with an approximate
-      inversion and size1()/size2() functions returning its dimensions
-    \param b is the RHS of the lineqr equation system
-    \param x_0 gives the initial guess
-    \param max_iter determines the maximum number of iterations.
-    \param abs_tol determines the tolerance for the remaining
-      residuum. The algorithm will terminate if ||Ax - b||_2 / ||b||_2 < abs_tol.
-    \param rel_tol determines the expected residual reduction. The
-      algorithm will terminate when ||Ax_0 - b||_2 / ||Ax - b||_2 < rel_tol.
-      By specifying red_tol to be, say 1e-2, one requires the residuum to
-      be reduced to one hundreth of its initial value.
+    Parameters
+    ----------
+    A : functor
+        A functor defining the matrix, realising the dot function
+        for supplying a vector to be multiplied returning the result, a cond()
+        function for supplying a vector and multiplying it with an approximate
+        inversion and size1()/size2() functions returning its dimensions
+    b : vector
+        RHS of the lineqr equation system
+    x_0 : vector
+        gives the initial guess
+    max_iter : int
+        determines the maximum number of iterations.
+    abs_tol : float
+        determines the tolerance for the remaining
+        residuum. The algorithm will terminate if :math:`||Ax - b||_2 / ||b||_2 < \mathrm{abs\_tol}`.
+    rel_tol : float
+        determines the expected residual reduction. The
+        algorithm will terminate when :math:`||Ax_0 - b||_2 / ||Ax - b||_2 < \mathrm{rel_tol}`.
+        By specifying red_tol to be, say 1e-2, one requires the residuum to
+        be reduced to one hundreth of its initial value.
+
     """
 
     rel_tol = np.array(rel_tol, copy=True).reshape(-1)
@@ -100,27 +109,7 @@ def conj_grad_tall_solve(A, bs, P=None, x_0=None,
                          max_iter=-1, abs_tol=1e-20, rel_tol=1e-20,
                          verbose=False):
     """
-    Simple implementation of preconditioned conjugate gradient method
-
-    See A. Meister "Numerik linearer Gleichungssysteme", p. 218f
-
-    Compared to the un-preconditioned CG method, this needs memory for an
-    additional Vector and uses an additional scalar-product and one
-    Matrix-Vector product per iteration.
-
-    \param A is a functor defining the matrix, realising the mult() function
-      for supplying a vector to be multiplied returning the result, a cond()
-      function for supplying a vector and multiplying it with an approximate
-      inversion and size1()/size2() functions returning its dimensions
-    \param b is the RHS of the lineqr equation system
-    \param x gives the initial guess and returns the result of the method
-    \param max_iter determines the maximum number of iterations.
-    \param abs_tol determines the tolerance for the remaining
-      residuum. The algorithm will terminate if ||Ax - b||_2 / ||b||_2 < abs_tol.
-    \param rel_tol determines the expected residual reduction. The
-      algorithm will terminate when ||Ax_0 - b||_2 / ||Ax - b||_2 < rel_tol.
-      By specifying red_tol to be, say 1e-2, one requires the residuum to
-      be reduced to one hundreth of its initial value.
+    see conj_grad_solve.
     """
 
     if P is None:

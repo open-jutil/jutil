@@ -3,6 +3,7 @@ import numpy.linalg as la
 from jutil.lnsrch import lnsrch
 from jutil.operator import CostFunctionOperator
 from jutil.preconditioner import CostFunctionPreconditioner
+import jutil.costfunction
 import jutil.cg as cg
 import logging
 
@@ -24,16 +25,55 @@ def _print_info(log, it, J, disq, normb):
     chisq_str, disq_str = "", ""
     if hasattr(J, "chisq_m") and hasattr(J, "chisq_a"):
         chisq_str =  "(meas= {chisqm} / apr= {chisqa} )".format(chisqm=J.chisq_m, chisqa=J.chisq_a)
-    if not np.isnan(disq):
-        disq_str = " / d_i^2/n= {disq}".format(disq)
+    if disq and not np.isnan(disq):
+        disq_str = " / d_i^2/n= {disq}".format(disq=disq)
     log.info("it= {it} / chi^2/m= {chisq}{chisq_str}{disq_str} / |J'|= {normb} / Q= {prob}".format(
         it=it, chisq=J.chisq, chisq_str=chisq_str, disq_str=disq_str, normb=normb,
         prob=get_chi_square_probability(J.chisq * J.m, J.m)))
 
 
+class OptimizeResult(dict):
+    """
+    Dictionary wrapper to return the minimum of a costfunction and ancillary information
+    about the minimisation. Modelled after scipy.optimize OptomizeResult for better
+    compatibility. Small changes in contained information due to different philosophies.
+
+    Attributes
+    ----------
+    x : vector
+        Identified minimum
+    fun : float
+        cost function value at minimum
+    jac : vector
+        gradient of the cost function at minimum
+    nfev, njev, nhev, nhdev, nahiev: int
+        Number of evaluations of costfunction, costfunction gradient, costfunction
+        hessian, costfunction hessian dot product, and cost function approximate hessian
+        inverse methods
+    nit : int
+        number of used iterations
+    conv : dict
+        Dictionary indicating which stopping criteria terminated the optimization.
+    """
+    def __getattr__(self, name):
+        try:
+            return self[name]
+        except KeyError:
+            raise AttributeError(name)
+
+
 class Minimizer(object):
     """
     Class for computing non-linear minima of cost functions.
+
+    Parameters
+    ----------
+    stepper : type
+
+    Returns
+    -------
+    OptimizeResult
+        One of the Stepper classes provided in this module.
     """
     def __init__(self, stepper):
         self._stepper = stepper
@@ -48,23 +88,44 @@ class Minimizer(object):
 
     def update_tolerances(self, tol):
         """
-        Allows to set convergence criteria. Options are
+        Allows to set convergence criteria.
 
-        min_costfunction_gradient: Terminate if the gradient of the cost function falls
-            below this limit.
-        discrepancy_principle_tau: Terminate if the norm of the discrepancy of the
-            measurements falls below this limit (in effect chi^2_m < tau^2) is cheched.
-        min_costfunction_reduction: Terminate if the relative reduction of the cost
-            function in one iteration falls below this limit (given in percent).
-        min_normalized_stepsize: Terminate if the scalar product between step in state
-            space and the current gradient of the cost function divided by the number of
-            state space elements falls below this number.
-        max_iteration: Terminate if the number of iterations surpasses this limit.
+        Parameters
+        ----------
+        tol : dict
+            min_costfunction_gradient: Terminate if the gradient of the cost function falls
+                                       below this limit.
+            discrepancy_principle_tau: Terminate if the norm of the discrepancy of the
+                                       measurements falls below this limit (in effect chi^2_m < tau^2) is cheched.
+            min_costfunction_reduction: Terminate if the relative reduction of the cost
+                                        function in one iteration falls below this limit (given in percent).
+            min_normalized_stepsize: Terminate if the scalar product between step in state
+                                     space and the current gradient of the cost function divided by the number of
+                                     state space elements falls below this number.
+            max_iteration: Terminate if the number of iterations surpasses this limit.
+
         """
         assert all([key in self._conv for key in tol]), tol
         self._conv.update(tol)
 
     def __call__(self, J, x_0):
+        """
+        Executes the minimization.
+
+        Parameters
+        ----------
+        J : type
+            CostFunction
+        x_0 : vector
+            initial guess
+
+        Returns
+        -------
+        x : vector
+            Minimum
+        """
+
+        J = jutil.costfunction.CountingCostFunction(J)
         x_i = x_0.copy()
 
         if hasattr(J, "init"):
@@ -115,9 +176,26 @@ class Minimizer(object):
             if any(converged.values()):
                 self._log.info("Convergence criteria reached. " + str([x for x in converged if converged[x]]))
                 break
-        _print_info(self._log, it, J, disq, la.norm(-J.jac(x_i)))
+        b = -J.jac(x_i)
+        _print_info(self._log, it, J, disq, la.norm(b))
 
-        return x_i
+        self._log.debug("J:call={} jac={} hess_dot={} hess={} hess_diag={}".format(
+            J.cnt_call, J.cnt_jac, J.cnt_hess_dot, J.cnt_hess, J.cnt_hess_diag))
+
+        result = OptimizeResult({
+            "x" : x_i,
+            "success": True,
+            "fun": chisq,
+            "jac": -b,
+            "nit": it,
+            "nfev": J.cnt_call,
+            "njev": J.cnt_jac,
+            "nhev": J.cnt_hess,
+            "nhdev": J.cnt_hess_dot,
+            "nahiev": J.cnt_hess_diag,
+            "conv": converged,
+        })
+        return result
 
 
 class LevenbergMarquardtAbstractBase(object):
@@ -253,7 +331,7 @@ class TruncatedCGQuasiNewtonStepper(object):
 
 class TrustRegionTruncatedCGQuasiNewtonStepper(object):
     """
-    \todo newton requires dampening (p - 1) for l_p normed cost functions?
+    todo newton requires dampening (p - 1) for l_p normed cost functions?
     """
     def __init__(self, conv_rel=1e-4, factor=10, cg_max_iter=-1):
         self._conv_rel_init = conv_rel
@@ -282,6 +360,15 @@ class TrustRegionTruncatedCGQuasiNewtonStepper(object):
         for i, x_step in enumerate(x_steps):
             x_new = x_i + x_step
             chisq = J(x_new)
+            delta_chisq = chisq - chisq_old
+            delta_chisq_pred = - np.dot(b, x_step) + 0.5 * np.dot(x_step, J.hess_dot(x_i, x_step))
+            if delta_chisq != 0:
+                chisq_factor = delta_chisq_pred / delta_chisq
+            else:
+                chisq_factor = np.Inf
+
+            self._log.debug("  try {} with err_rel= {} , new chisq= {} , old chisq= {}".format(
+                i, err_rels[i], chisq, chisq_old))
             if chisq > chisq_old and i + 1 < len(x_steps):
                 continue
 
@@ -293,7 +380,67 @@ class TrustRegionTruncatedCGQuasiNewtonStepper(object):
             else:
                 self._conv_rel = err_rels[i] / self._factor
             break
-        self._log.info("  Decreasing reltol to {} ({}<{})".format(self._conv_rel, chisq, chisq_old))
+        self._log.info("  Setting reltol to {} ({}<{})".format(self._conv_rel, chisq, chisq_old))
+        return x_step
+
+
+class TrustRegionTruncatedCGQuasiNewton2Stepper(object):
+    """
+    todo newton requires dampening (p - 1) for l_p normed cost functions?
+    """
+    def __init__(self, conv_rel=1e-4, factor=10, cg_max_iter=-1):
+        self._conv_rel_init = conv_rel
+        self._conv_rel = self._conv_rel_init
+        self._factor = factor
+        self._cg_max_iter = cg_max_iter
+        self._log = logging.getLogger(__name__ + ".TrustRegionTruncatedCGQuasiNewton")
+
+    def _get_err_rels(self):
+        result = [self._conv_rel]
+        while result[-1] < 1:
+            result.append(min(result[-1] * self._factor, 1.0))
+        return result
+
+    def init(self):
+        self._conv_rel = self._conv_rel_init
+
+    def __call__(self, J, b, x_i):
+        chisq_old = J.chisq
+
+        err_rels = self._get_err_rels()
+        x_steps = cg.conj_grad_solve(
+            CostFunctionOperator(J, x_i), b,
+            P=CostFunctionPreconditioner(J, x_i),
+            max_iter=self._cg_max_iter, rel_tol=err_rels, abs_tol=0, verbose=True)
+        for i, x_step in enumerate(x_steps):
+            self._conv_rel = err_rels[i]
+
+            x_new = x_i + x_step
+            delta_chisq_pred = - np.dot(b, x_step) + 0.5 * np.dot(x_step, J.hess_dot(x_i, x_step))
+            chisq = J(x_new)
+            delta_chisq = chisq - chisq_old
+            if delta_chisq != 0:
+                chisq_factor = delta_chisq_pred / delta_chisq
+            else:
+                chisq_factor = np.Inf
+
+            self._log.debug("  try {} with err_rel= {} , new chisq= {} , old chisq= {}, chisq_factor= {}".format(
+                i, err_rels[i], chisq, chisq_old, chisq_factor))
+
+            if chisq_factor < 0.25:
+                self._conv_rel = min(1.0, self._conv_rel * self._factor)
+            else:
+                if chisq_factor > 0.5:
+                    self._conv_rel /= self._factor
+            if delta_chisq <= 0:
+                return x_step
+
+        self._log.info("  CG steps exhausted. Employing line search.")
+        _, chisq, x_new = lnsrch(x_i, chisq_old, -b, x_steps[-1], J)
+        x_step = x_new - x_i
+        self._conv_rel = 1
+
+        self._log.info("  Setting reltol to {} ({}<{})".format(self._conv_rel, chisq, chisq_old))
         return x_step
 
 
@@ -301,7 +448,8 @@ def minimize(J, x0, method="TrustRegionTruncatedCGQuasiNewton", options={}, tol=
     """
     Front-end for JUTIL non-linear minimization.
 
-    Supported methods are
+    Supported methods area
+
     * SteepestDescent
     * CauchyPointSteepestDescent
     * LevenbergMarquardtReduction
@@ -310,13 +458,18 @@ def minimize(J, x0, method="TrustRegionTruncatedCGQuasiNewton", options={}, tol=
     * TruncatedCGQuasiNewton
     * TrustRegionTruncatedCGQuasiNewton(default)
 
-    Attributes
+    Parameters
     ----------
-    J: CostFunction
-    x0: inital guess
-    method: String determining method
-    options: Additional parameters for the chosen method
-    tol: convergence options for the outer loop
+    J: type
+        CostFunction
+    x0: vector
+        inital guess
+    method: str
+        String determining method
+    options: dict
+        Additional parameters for the chosen method
+    tol: dict
+        convergence options for the outer loop
     """
 
     current_module = __import__(__name__)
@@ -333,16 +486,21 @@ def scipy_minimize(J, x0, method=None, options=None, tol=None):
     """
     Wrapper around scipy.optimize. Tested are "BFGS", "Newton-CG", "CG", and "trust-ncg".
 
-    Attributes
+    Parameters
     ----------
-    J: CostFunction
-    x0: inital guess
-    method: String determining method
-    options: Additional parameters for the chosen method
-    tol: convergence options for the outer loop
+    J: type
+        CostFunction
+    x0: vector
+        inital guess
+    method: str
+        String determining method
+    options: dict
+        Additional parameters for the chosen method
+    tol: dict
+        convergence options for the outer loop
     """
     log = logging.getLogger(__name__)
- 
+
     def print_info(x_i):
         normb = la.norm(J.jac(x_i))
         _print_info(log, print_info.it, J, None, normb)

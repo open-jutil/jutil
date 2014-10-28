@@ -4,15 +4,13 @@ import logging
 
 class TakeTime(object):
     """
-    Measure the time consumed by an entire block and write to stdout.
+    Measure the time consumed by an entire block and write to stdout.::
 
-    Usage:
-
-    with TakeTime("Doing something") as timer:
-        do_something
-        if timer.dt > time_limit:
-            print("Oh no, running late already!")
-        do_even_more
+        with TakeTime("Doing something") as timer:
+            do_something
+            if timer.dt > time_limit:
+                print("Oh no, running late already!")
+            do_even_more
 
     The 'as' part is optional.
     """
@@ -31,5 +29,8 @@ class TakeTime(object):
 
     @property
     def dt(self):
+        """
+        returns time passes sind the timer was started.
+        """
         return time.time() - self.t0
 

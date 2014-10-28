@@ -8,7 +8,7 @@ LOG = logging.getLogger(__name__)
 def lsqr_solve(A, b, P=None, x_0=None,
                max_iter=-1, abs_tol=1e-20, rel_tol=1e-20, rel_change_tol=1e-20,
                verbose=False):
-    """
+    r"""
     Preconditioned LSQR method to minimize ||Ax - b|| = ||r||.
 
     where A is a matrix with m rows and n columns, b is an m-vector.
@@ -25,24 +25,35 @@ def lsqr_solve(A, b, P=None, x_0=None,
     A.cond_ls_inverse(x, y) must compute y = M^{-1}*x, where M is an
     approximate inverse of A
 
-    \param A the Matrix functor offering mult_ls, mult_ls_transpose, cond_ls
-    and cond_ls_inverse functions.
-    \param x the vector containing the result. This is NOT an input
-    parameter supplying the first guess!
-    \param b the r.h.s of the equation system.
-    \param max_iter maximum allowed number of iterations. According to Paige
-    and Saunders, this should be n/2 for well-conditioned systems and 4*n
-    otherwise.
-    \param abs_tol required absolute reduction of error, i.e. the iteration
-    is terminated if ||A^T r||<abs_tol.
-    \param abs_tol required relative reduction of error, i.e. the iteration
-    is terminated if ||A^T r||<rel_tol ||A^T b||
-    \param rel_change_tol Third stopping criteria, stopping if 1 -
-    (||r_{i+1}|| / ||r_i||) < rel_change_tol
+    Parameters
+    ----------
+    A : matrix
+        the Matrix functor offering mult_ls, mult_ls_transpose, cond_ls
+        and cond_ls_inverse functions.
+    x : vector
+        the vector containing the result. This is NOT an input
+        parameter supplying the first guess!
+    b : vector
+        the r.h.s of the equation system.
+    max_iter : int
+        maximum allowed number of iterations. According to Paige
+        and Saunders, this should be n/2 for well-conditioned systems and 4*n
+        otherwise.
+    abs_tol : float
+        required absolute reduction of error, i.e. the iteration
+        is terminated if ||A^T r|| < \mathrm{abs\_tol}.
+    rel_tol : float
+        required relative reduction of error, i.e. the iteration
+        is terminated if ||A^T r|| < \mathrm{rel\_tol} ||A^T b||
+    rel_change_tol : float
+        Third stopping criteria, stopping if :math:`1 -
+        (||r_{i+1}|| / ||r_i||) < \mathrm{rel\_change\_tol}`
 
-    The iteration stops if ||A^T * r|| < \p abs_tol, ||A^T * r|| / ||A^T
-    * b|| < \p rel_tol, 1 - (||r_{k+1}|| / ||r_k||) < \p
-    rel_change_tol, or the maximum number of iterations is reached.
+    Notes
+    -----
+    The iteration stops if :math:`||A^T r|| < \mathrm{abs\_tol}`, :math:`||A^T r|| / ||A^T
+    b|| < \mathrm{rel\_tol}, 1 - (||r_{k+1}|| / ||r_k||) <
+    \mathrm{rel\_change\_tol}`, or the maximum number of iterations is reached.
 
     LSQR uses an iterative method to approximate the solution.
     The number of iterations required to reach a certain accuracy
@@ -53,17 +64,18 @@ def lsqr_solve(A, b, P=None, x_0=None,
     Note that x is not an input parameter. If some initial estimate x_0 is
     known, one could proceed as follows:
 
-    1. Compute a residual vector     r_0 = b - A*x_0.
-    2. Use LSQR to solve the system  A*dx = r_0.
-    3. Add the correction dx to obtain a final solution x = x_0 + dx.
+    1. Compute a residual vector     :math:`r_0 = b - A x_0`.
+    2. Use LSQR to solve the system  :math:`A dx = r_0`.
+    3. Add the correction dx to obtain a final solution :math:`x = x_0 + dx`.
 
     References
-    C.C. Paige and M.A. Saunders,  LSQR: An algorithm for sparse
+    ----------
+    .. [1] C.C. Paige and M.A. Saunders,  LSQR: An algorithm for sparse
          linear equations and sparse least squares,
          ACM Transactions on Mathematical Software 8, 1 (March 1982),
          pp. 43-71.
 
-    C.C. Paige and M.A. Saunders,  Algorithm 583, LSQR: Sparse
+    .. [2] C.C. Paige and M.A. Saunders,  Algorithm 583, LSQR: Sparse
          linear equations and least-squares problems,
          ACM Transactions on Mathematical Software 8, 2 (June 1982),
          pp. 195-209.

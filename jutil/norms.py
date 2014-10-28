@@ -2,15 +2,38 @@ import numpy as np
 import jutil.linalg
 
 
-class BaseNorm(object):
+class _BaseNorm(object):
+    """
+    A class to provide some basic functionality based on other functions that shall
+    be provided by derived classes.
+    """
     def hess_dot(self, x, vec):
+        """
+        Provides the product of the Hessian matrix of this norm with a vector.
+
+        Parameters
+        ----------
+        x : vector
+             Determines the position where the Hessian matrix shall be evaluated at.
+        vec : vector
+            Vector to be multiplied with
+
+        """
         return self.hess_diag(x) * vec
 
     def hess(self, x):
+        """
+        Provides the Hessian matrix of this norm.
+
+        Parameters
+        ----------
+        x : vector
+            Determines the position where the Hessian matrix shall be evaluated at.
+        """
         return np.diag(self.hess_diag(x))
 
 
-class Huber(BaseNorm):
+class Huber(_BaseNorm):
     def __init__(self, c):
         self._c = c
 
@@ -25,7 +48,7 @@ class Huber(BaseNorm):
         return 2 * np.where(np.abs(x) <= self._c, np.ones_like(x), np.zeros_like(x))
 
 
-class Ekblom(BaseNorm):
+class Ekblom(_BaseNorm):
     def __init__(self, eps, p):
         self._eps = eps
         self._p = p
@@ -43,7 +66,7 @@ class Ekblom(BaseNorm):
     def hess_dot(self, x, vec):
         return self.hess_diag(x) * vec
 
-class BiSquared(BaseNorm):
+class BiSquared(_BaseNorm):
     def __init__(self, k):
         self._k = k
 
@@ -141,7 +164,6 @@ class WeightedTV(object):
                     result[i + j] += vec1[i] * vec2[i + k] * fac
         return self._weight.T.dot(result)
 
-
     # F(x) = f(g(Sx))
     # ddF(x) = ST * dg(Sx)T * ddf(g(Sx)) * dg(Sx) * S
     #        + ST * ddg(Sx)T * df(g(Sx)) * S
@@ -153,6 +175,9 @@ class WeightedTV(object):
         temp1 = self._map(x)
         temp2 = self._base.jac(temp1)
         return self._map_jacT_dot(x, temp2)
+
+    def hess(self, x):
+        raise NotImplementedError
 
     def hess_dot(self, x, vec):
         Sx = self._weight.dot(x)
@@ -166,12 +191,15 @@ class WeightedTV(object):
         ddgSxT_dot_dfgSx_dot_Svec = self._map_hess_dot(x, dfgSx, Svec, xp=Sx)
 
         temp = sgSxT_dot_ddfgSx_dot_dgSx_dot_Svec + ddgSxT_dot_dfgSx_dot_Svec
-        return temp#self._weight.T.dot(temp)
+        return temp
+
+    def hess_diag(self, x):
+        raise NotImplementedError
 
 
-class L2Square(object):
+class L2Square(_BaseNorm):
     """
-    Norm is ||x||_2^2 = \sum_i |x_i|^2
+    Norm is :math:`||x||_2^2 = \sum_i |x_i|^2`
     """
 
     def __call__(self, x):
@@ -184,12 +212,12 @@ class L2Square(object):
         return 2 * np.ones_like(x)
 
 
-class LPPow(BaseNorm):
+class LPPow(_BaseNorm):
     """
-    Norm is ||x||_p = (\sum_i |x_i|^p)
+    Norm is :math:`||x||_p = (\sum_i |x_i|^p)`
 
     Norm is regularized to be twice-differentiable with
-    |x_i| = sqrt(x_i^2 + eps)
+    :math:`|x_i| = \sqrt{x_i^2 + eps}`
     """
 
     def __init__(self, p, eps):
@@ -207,9 +235,9 @@ class LPPow(BaseNorm):
                 ((self._p - 1) * (x ** 2) + self._eps))
 
 
-class L1(BaseNorm):
+class L1(_BaseNorm):
     """
-    Norm is ||x||_1 = (\sum_i |x_i|)
+    Norm is :math:`||x||_1 = (\sum_i |x_i|)`
     """
 
     def __init__(self):
@@ -225,9 +253,9 @@ class L1(BaseNorm):
         return np.zeros_like(x)
 
 
-class LInf(BaseNorm):
+class LInf(_BaseNorm):
     """
-    Norm is ||x||_inf = (\max_i |x_i|)
+    Norm is :math:`||x||_inf = (\max_i |x_i|)`
     """
 
     def __init__(self):
@@ -246,8 +274,8 @@ class LInf(BaseNorm):
 
 class WeightedNorm(object):
     """
-    Norm is ||A x|| with A being a rectangular _weight matrix and
-    ||.|| a supplied _base norm
+    Norm is :math:`||A x||` with A being a rectangular matrix and
+    :math:`||.||` a supplied _base norm
     """
 
     def __init__(self, basenorm, weight):
@@ -281,7 +309,7 @@ class WeightedNorm(object):
 
 class WeightedL2Square(object):
     """
-    Norm is ||A x||_2^2 with A being a rectangular \p weight_ matrix.
+    Norm is :math:`||A x||_2^2` with A being a rectangular matrix.
 
     Optimised for performance as the same effect could be gained by
     combination of WeightedNorm with L2Square norm.

@@ -45,9 +45,9 @@ lAq = norms.WeightedNorm(lq, AI.T * n) # n for division by m in J
 x = np.random.random(n)
 J = CostFunction(lAp, x)
 
-P = lambda x: (1. / q) * lAq.jac(x)
+P = lambda _, x: (1. / q) * lAq.jac(x)
 print AI**2*n**2
-print P(np.ones(n))
+print P(None, np.ones(n))
 tol = {"max_iteration": 10}
 
 minimize(J, np.zeros(len(x)), method="SteepestDescent", tol=tol)
