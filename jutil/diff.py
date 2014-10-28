@@ -1,6 +1,26 @@
 import scipy.sparse
 import numpy as np
 
+def fd_jac(fun, x, epsilon=1e-6):
+    f0 = fun(x)
+    return np.asarray([
+        (fun(x + epsilon * np.eye(len(x), 1, -i).squeeze()) - f0)
+         for i in xrange(len(x))]) / epsilon
+
+
+def fd_hess(jac, x, epsilon=1e-6):
+    j0 = jac(x)
+    return np.asarray(
+        [(jac(x + epsilon * np.eye(len(x), 1, -i).squeeze()) - j0)
+        for i in xrange(len(x))]) / epsilon
+
+
+def fd_hess_dot(jac, x, vec, epsilon=1e-6):
+    f1 = jac(x + epsilon * vec)
+    f0 = jac(x)
+    return (f1 - f0) / epsilon
+
+
 
 def get_diff_op(mask, axis, factor=1):
     """

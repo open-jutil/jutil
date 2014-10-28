@@ -22,14 +22,15 @@ def get_chi_square_probability(chisq, N):
 
 
 def _print_info(log, it, J, disq, normb):
-    chisq_str, disq_str = "", ""
+    chisq_str, disq_str, q_str = "", "", ""
     if hasattr(J, "chisq_m") and hasattr(J, "chisq_a"):
         chisq_str =  "(meas= {chisqm} / apr= {chisqa} )".format(chisqm=J.chisq_m, chisqa=J.chisq_a)
     if disq and not np.isnan(disq):
         disq_str = " / d_i^2/n= {disq}".format(disq=disq)
-    log.info("it= {it} / chi^2/m= {chisq}{chisq_str}{disq_str} / |J'|= {normb} / Q= {prob}".format(
-        it=it, chisq=J.chisq, chisq_str=chisq_str, disq_str=disq_str, normb=normb,
-        prob=get_chi_square_probability(J.chisq * J.m, J.m)))
+    if hasattr(J, "m"):
+        qstr = " / Q= {}".format(get_chi_square_probability(J.chisq * J.m, J.m))
+    log.info("it= {it} / chi^2/m= {chisq}{chisq_str}{disq_str} / |J'|= {normb}{qstr}".format(
+        it=it, chisq=J.chisq, chisq_str=chisq_str, disq_str=disq_str, normb=normb, qstr=qstr))
 
 
 class OptimizeResult(dict):
@@ -46,7 +47,7 @@ class OptimizeResult(dict):
         cost function value at minimum
     jac : vector
         gradient of the cost function at minimum
-    nfev, njev, nhev, nhdev, nahiev: int
+    nfev, njev, nhev, nhdev, nahiev : int
         Number of evaluations of costfunction, costfunction gradient, costfunction
         hessian, costfunction hessian dot product, and cost function approximate hessian
         inverse methods
@@ -114,7 +115,7 @@ class Minimizer(object):
 
         Parameters
         ----------
-        J : type
+        J : AbstractCostFunction
             CostFunction
         x_0 : vector
             initial guess
@@ -460,15 +461,15 @@ def minimize(J, x0, method="TrustRegionTruncatedCGQuasiNewton", options={}, tol=
 
     Parameters
     ----------
-    J: type
+    J : type
         CostFunction
-    x0: vector
+    x0 : vector
         inital guess
-    method: str
+    method : str
         String determining method
-    options: dict
+    options : dict
         Additional parameters for the chosen method
-    tol: dict
+    tol : dict
         convergence options for the outer loop
     """
 
@@ -488,15 +489,15 @@ def scipy_minimize(J, x0, method=None, options=None, tol=None):
 
     Parameters
     ----------
-    J: type
+    J : AbstractCostFunction
         CostFunction
-    x0: vector
+    x0 : vector
         inital guess
-    method: str
+    method : str
         String determining method
-    options: dict
+    options : dict
         Additional parameters for the chosen method
-    tol: dict
+    tol : dict
         convergence options for the outer loop
     """
     log = logging.getLogger(__name__)
