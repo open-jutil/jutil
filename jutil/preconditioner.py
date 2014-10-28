@@ -26,8 +26,8 @@ class CostFunctionPreconditioner(object):
     def __init__(self, J, x_i):
         self._J = J
         self._x_i = x_i
-        if hasattr(J, "hess_diagonal"):
-            self._diagonal = _safe_inverse(J.hess_diagonal(self._x_i))
+        if hasattr(J, "hess_diag"):
+            self._diagonal = _safe_inverse(J.hess_diag(self._x_i))
             self.dot = self._dot_diag
         else:
             self.dot = lambda x: np.array(x, copy=True)

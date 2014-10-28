@@ -1,6 +1,7 @@
 import scipy.sparse
 import numpy as np
 
+
 def fd_jac(fun, x, epsilon=1e-6):
     f0 = fun(x)
     return np.asarray([
@@ -8,21 +9,21 @@ def fd_jac(fun, x, epsilon=1e-6):
          for i in xrange(len(x))]) / epsilon
 
 
-def fd_hess(jac, x, epsilon=1e-6):
-    j0 = jac(x)
-    return np.asarray(
-        [(jac(x + epsilon * np.eye(len(x), 1, -i).squeeze()) - j0)
-        for i in xrange(len(x))]) / epsilon
-
-
-def fd_hess_dot(jac, x, vec, epsilon=1e-6):
-    f1 = jac(x + epsilon * vec)
-    f0 = jac(x)
+def fd_jac_dot(fun, x, vec, epsilon=1e-6):
+    f0 = fun(x)
+    f1 = fun(x + epsilon * vec)
     return (f1 - f0) / epsilon
 
 
+def fd_hess(fun, x, epsilon=1e-6):
+    return fd_jac(lambda x: fd_jac(fun, x, epsilon), x, epsilon=1e-6)
 
-def get_diff_op(mask, axis, factor=1):
+
+def fd_hess_dot(fun, x, vec, epsilon=1e-6):
+    return fd_jac_dot(lambda x: fd_jac(fun, x, epsilon), x, vec, epsilon=1e-6)
+
+
+def get_diff_operator(mask, axis, factor=1):
     """
     Returns a difference operator for a given mask indicating which elements are "active".
 
@@ -63,5 +64,3 @@ def get_diff_op(mask, axis, factor=1):
     vals = np.concatenate([-np.ones(factor * len(m1s)), np.ones(factor * len(m1s))])
 
     return scipy.sparse.coo_matrix((vals, (rows, cols)), (factor * n,factor * n)).tocsr()
-
-get_diff_operator = get_diff_op

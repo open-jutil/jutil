@@ -44,12 +44,15 @@ def conj_grad_solve(A, b, P=None, x_0=None,
     rel_tol = np.array(rel_tol, copy=True).reshape(-1)
     assert len(rel_tol) > 0
     assert np.all(np.diff(rel_tol) > 0)
+    assert A.shape[1] == len(b), (A.shape, len(b))
 
     if P is None:
         from jutil.operator import Identity
         P = Identity(A.shape[1])
+    assert P.shape == A.shape
 
     x = np.array(x_0, copy=True) if x_0 is not None else np.zeros_like(b)
+    assert len(x) == len(b)
 
     if max_iter < 1:
         max_iter = 2 * A.shape[1]
