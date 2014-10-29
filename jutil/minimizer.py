@@ -131,7 +131,6 @@ class Minimizer(object):
 
         if hasattr(J, "init"):
             J.init(x_i)
-
         if hasattr(self._stepper, "init"):
             self._stepper.init()
 
@@ -352,9 +351,7 @@ class TrustRegionTruncatedCGQuasiNewtonStepper(object):
 
     def __call__(self, J, b, x_i):
         chisq_old = J.chisq
-
         err_rels = self._get_err_rels()
-        print b
         x_steps = cg.conj_grad_solve(
             CostFunctionOperator(J, x_i), b,
             P=CostFunctionPreconditioner(J, x_i),
