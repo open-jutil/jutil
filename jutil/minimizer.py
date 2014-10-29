@@ -354,6 +354,7 @@ class TrustRegionTruncatedCGQuasiNewtonStepper(object):
         chisq_old = J.chisq
 
         err_rels = self._get_err_rels()
+        print b
         x_steps = cg.conj_grad_solve(
             CostFunctionOperator(J, x_i), b,
             P=CostFunctionPreconditioner(J, x_i),
@@ -368,7 +369,7 @@ class TrustRegionTruncatedCGQuasiNewtonStepper(object):
             else:
                 chisq_factor = np.Inf
 
-            self._log.debug("  try {} with err_rel= {} , new chisq= {} , old chisq= {}".format(
+            self._log.info("  try {} with err_rel= {} , new chisq= {} , old chisq= {}".format(
                 i, err_rels[i], chisq, chisq_old))
             if chisq > chisq_old and i + 1 < len(x_steps):
                 continue
