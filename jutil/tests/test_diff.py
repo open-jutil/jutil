@@ -1,7 +1,37 @@
 import scipy.sparse
 import numpy as np
 import jutil.diff
-from numpy.testing import assert_equal
+from numpy.testing import assert_equal, assert_almost_equal
+
+
+def test_fd_jac():
+    def f(x):
+        return x ** 3
+
+    assert_almost_equal(
+        jutil.diff.fd_jac(f, np.asarray([2, 3])),
+        np.asarray([[12, 0], [0, 27]]),
+        decimal=4)
+
+    assert_almost_equal(
+        jutil.diff.fd_jac_dot(f, np.asarray([2, 3]), np.asarray([1., 0.5])),
+        np.asarray([12, 13.5]),
+        decimal=4)
+
+
+def test_fd_hess():
+    def f(x):
+        return x[0] ** 2 + x[1] ** 3
+
+    assert_almost_equal(
+        jutil.diff.fd_hess(f, np.asarray([2, 3])),
+        np.asarray([[2, 0], [0, 6*3]]),
+        decimal=2)
+
+    assert_almost_equal(
+        jutil.diff.fd_hess_dot(f, np.asarray([2, 3]), np.asarray([1., 0.5])),
+        np.asarray([2, 9]),
+        decimal=2)
 
 
 def get_diff_op_old(mask):
@@ -44,6 +74,7 @@ mask = np.zeros((50,50), dtype=bool)
 for i in range(1, 40):
     for j in range(1, 40):
         mask[i, j] = True
+
 def test_diff():
     import jutil.operator as op
     #import timeit

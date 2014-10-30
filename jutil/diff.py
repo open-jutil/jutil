@@ -3,6 +3,20 @@ import numpy as np
 
 
 def fd_jac(fun, x, epsilon=1e-6):
+    """
+    Computes Jacobian by finite differences.
+
+    Parameters
+    ----------
+    fun : callable
+    x : array_like
+    epsilon : float, optional
+        Delta for the finite difference computation. Default is 1e-6
+
+    Returns
+    -------
+    Matrix containing the Jacobian
+    """
     f0 = fun(x)
     return np.asarray([
         (fun(x + epsilon * np.eye(len(x), 1, -i).squeeze()) - f0)
@@ -10,16 +24,41 @@ def fd_jac(fun, x, epsilon=1e-6):
 
 
 def fd_jac_dot(fun, x, vec, epsilon=1e-6):
+    """
+    Computes the product of Jacobian with a vector by finite differences.
+
+    Parameters
+    ----------
+    fun : callable
+    x : array_like
+    vec : array_like
+    epsilon : float, optional
+        Delta for the finite difference computation. Default is 1e-6
+
+    Returns
+    -------
+    Vector containing the Jacobian-vector product
+    """
     f0 = fun(x)
     f1 = fun(x + epsilon * vec)
     return (f1 - f0) / epsilon
 
 
 def fd_hess(fun, x, epsilon=1e-6):
+    """
+    Computes the Hessian by finite differences. Usually a very bad idea.
+    Acceptable results can be achieved by finite-differencing an analytic
+    Jacobian (that is apply fd_jac on the analytic Jacobian).
+    """
     return fd_jac(lambda x: fd_jac(fun, x, epsilon), x, epsilon=1e-6)
 
 
 def fd_hess_dot(fun, x, vec, epsilon=1e-6):
+    """
+    Computes a Hessian-vector product by finite differences. Usually a very bad idea.
+    Acceptable results can be achieved by finite-differencing an analytic
+    Jacobian (that is apply fd_jac_dot on the analytic Jacobian).
+    """
     return fd_jac_dot(lambda x: fd_jac(fun, x, epsilon), x, vec, epsilon=1e-6)
 
 

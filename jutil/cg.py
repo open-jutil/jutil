@@ -1,6 +1,7 @@
 import numpy as np
 import numpy.linalg as la
 import logging
+import jutil
 
 LOG = logging.getLogger(__name__)
 
@@ -165,12 +166,27 @@ def conj_grad_tall_solve(A, bs, P=None, x_0=None,
 def conj_grad_minimize(J, x_0=None,
                        max_iter=-1, abs_tol=1e-20, rel_tol=1e-20,
                        verbose=False):
-    import jutil.operator as op
-    import jutil.preconditioner as pr
     if x_0 is None:
         x_0 = np.zeros(J.n)
+    J = jutil.costfunction.CountingCostFunction(J)
+    A = jutil.operator.CostFunctionOperator(J, x_0)
+    P = jutil.preconditioner.CostFunctionPreconditioner(J, x_0)
+
     b = -J.jac(x_0)
-    A = op.CostFunctionOperator(J, x_0)
-    P = pr.CostFunctionPreconditioner(J, x_0)
-    return  x_0 + conj_grad_solve(
+    x_f = x_0 + conj_grad_solve(
         A, b, P=P, max_iter=max_iter, abs_tol=abs_tol, rel_tol=rel_tol, verbose=verbose)
+
+    result = jutil.minimizer.OptimizeResult({
+            "x" : x_f,
+            "success": True,
+            "fun": None,
+            "jac": None,
+            "nit": None,
+            "nfev": J.cnt_call,
+            "njev": J.cnt_jac,
+            "nhev": J.cnt_hess,
+            "nhdev": J.cnt_hess_dot,
+            "nhdiagev": J.cnt_hess_diag,
+        })
+    return result
+

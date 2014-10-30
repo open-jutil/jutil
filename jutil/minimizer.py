@@ -47,7 +47,7 @@ class OptimizeResult(dict):
         cost function value at minimum
     jac : vector
         gradient of the cost function at minimum
-    nfev, njev, nhev, nhdev, nahiev : int
+    nfev, njev, nhev, nhdev, nhdiagev : int
         Number of evaluations of costfunction, costfunction gradient, costfunction
         hessian, costfunction hessian dot product, and cost function approximate hessian
         inverse methods
@@ -163,7 +163,7 @@ class Minimizer(object):
             # normalize step size in state space
             disq = np.dot(x_step, b) / J.n
 
-            if hasattr(J, "chisq_m"):
+            if hasattr(J, "chisq_m") and J.chisq_m is not None:
                 converged["discrepancy_principle_tau"] = (
                     J.chisq_m < self._conv["discrepancy_principle_tau"] ** 2)
             converged.update({
@@ -192,7 +192,7 @@ class Minimizer(object):
             "njev": J.cnt_jac,
             "nhev": J.cnt_hess,
             "nhdev": J.cnt_hess_dot,
-            "nahiev": J.cnt_hess_diag,
+            "nhdiagev": J.cnt_hess_diag,
             "conv": converged,
         })
         return result
