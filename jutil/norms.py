@@ -93,7 +93,7 @@ class WeightedTV(object):
     Provides a TV norm if a proper weight matrix is supplied.
     It is assumed that the first elements of the weight-vector product represents the partial
     derivatives, whereas elements 0 to indices[0] - 1 are the partial derivative with respect
-    to the first dimension, the elements indices[0] to indices[1] - 1 the partial derivative
+    to the first dimension, the elements indices[1] to indices[2] - 1 the partial derivative
     with respect to the second dimension and so on.
     """
     def __init__(self, basenorm, weight, indices):
@@ -169,7 +169,8 @@ class WeightedTV(object):
     #        + ST * ddg(Sx)T * df(g(Sx)) * S
 
     def __call__(self, x):
-        return self._base(self._map(x))
+        result = self._base(self._map(x))
+        return result
 
     def jac(self, x):
         temp1 = self._map(x)
