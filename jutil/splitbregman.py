@@ -20,15 +20,16 @@ def split_bregman_2d(A, D, y, weight=100, max_iter=300, mu=0.01, lambd=1, rel_ch
     ATA_DTD = Plus(Dot(A.T, A, a=(mu / lambd)), Dot(D.T, D))
 
     def print_info(vector):
+        log = LOG.info
         if not (it % 5 == 0 or it == 1):
-            return
+            log = LOG.debug
         dy = A.dot(vector) - y
         chisq_m = np.dot(dy, dy) / m
         chisq_a = (lambd / mu) * sum(np.hypot(*np.split(D.dot(vector), 2))) / m
         chisq = chisq_m + chisq_a
-        LOG.info("it= {it} / chi^2/m= {chisq} (meas= {chisqm} / apr= {chisqa} ) / {err}".format(
-                 it=it, chisq=chisq, chisqm=chisq_m,
-                 chisqa=chisq_a, err=error))
+        log("it= {it} / chi^2/m= {chisq} (meas= {chisqm} / apr= {chisqa} ) / {err}".format(
+            it=it, chisq=chisq, chisqm=chisq_m,
+            chisqa=chisq_a, err=error))
 
     it, error = 0, np.inf
     print_info(u)
@@ -42,7 +43,7 @@ def split_bregman_2d(A, D, y, weight=100, max_iter=300, mu=0.01, lambd=1, rel_ch
             rhs -= ATA_DTD.dot(u)
             u = u + (np.dot(rhs, rhs) / np.dot(ATA_DTD.dot(rhs), rhs)) * rhs
         else:
-            u = conj_grad_solve(ATA_DTD, rhs, max_iter=100, abs_tol=1e-20, rel_tol=1e-20)
+            u = conj_grad_solve(ATA_DTD, rhs, max_iter=20, abs_tol=1e-20, rel_tol=1e-20)
         it += 1
 
         D_dot_u_plus_b = D.dot(u) + b
