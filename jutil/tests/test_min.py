@@ -32,6 +32,9 @@ class CostFunction(object):
     def hess_dot(self, _, vec):
         return (2. * self._A.T.dot(self._A.dot(vec)) + 2. * self._lambda * vec) / self.m
 
+    def hess_diag(self, x):
+        return np.ones(self.n)
+
     @property
     def chisq(self):
         return self._chisq

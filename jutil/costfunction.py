@@ -233,10 +233,6 @@ class CountingCostFunction(AbstractCostFunction):
         self.m, self.n = J.m, J.n
         self.cnt_call, self.cnt_jac, self.cnt_hess_dot = 0, 0, 0
         self.cnt_hess, self.cnt_hess_diag = 0, 0
-        if hasattr(J, "chisq_m"):
-            self.chisq_m = property(J.chisq_m)
-        if hasattr(J, "chisq_a"):
-            self.chisq_a = property(J.chisq_a)
 
     def init(self, x):
         if hasattr(self._J, "init"):
@@ -265,4 +261,10 @@ class CountingCostFunction(AbstractCostFunction):
     @property
     def chisq(self):
         return self._J.chisq
+    @property
+    def chisq_m(self):
+        return self._J.chisq_m if hasattr(self._J, "chisq_m") else None
+    @property
+    def chisq_a(self):
+        return self._J.chisq_a if hasattr(self._J, "chisq_a") else None
 

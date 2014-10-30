@@ -95,10 +95,9 @@ def conj_grad_solve(A, b, P=None, x_0=None,
 
         alpha = new_alpha
 
-    if verbose:
-        LOG.info("CG needed {}{} iterations to reduce to {} {}".format(
-            ("max=" if (i == max_iter) else ""), i, la.norm(r),
-            la.norm(r) / norm_b))
+    LOG.info("CG needed {}{} iterations to reduce to {} {}".format(
+        ("max=" if (i == max_iter) else ""), i, la.norm(r),
+        la.norm(r) / norm_b))
 
     for j in [_j for _j in range(len(rel_tol)) if rel_tol[_j] != -1]:
         xs[j] = x.copy()
@@ -156,10 +155,9 @@ def conj_grad_tall_solve(A, bs, P=None, x_0=None,
         alphas = new_alphas
         alphas[alphas == 0] = 1
 
-    if verbose:
-        LOG.info("CG needed {}{}  iterations to reduce to {} {}".format(
-            ("max=" if (i == max_iter) else  ""), i, la.norm(rs),
-            np.asarray([la.norm(r) for r in rs.T]) / norms_b, norms_b))
+    LOG.info("CG needed {}{}  iterations to reduce to {} {}".format(
+        ("max=" if (i == max_iter) else  ""), i, la.norm(rs),
+        np.asarray([la.norm(r) for r in rs.T]) / norms_b, norms_b))
 
     return xs
 
