@@ -1,4 +1,5 @@
 import numpy as np
+import logging
 
 def get_lena_256():
     """
@@ -27,3 +28,20 @@ def get_phantom_1():
         if np.hypot(i, j) < 10:
             image[50 + i, 200 + j] = 200
     return image
+
+
+def setup_logging(logfile="jutil.log"):
+    logger = logging.getLogger('jutil')
+    logger.setLevel(logging.DEBUG)
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.INFO)
+    cf = logging.Formatter('jutil:%(message)s')
+    ch.setFormatter(cf)
+    logger.addHandler(ch)
+    if logfile:
+        fh = logging.FileHandler(logfile)
+        ff = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        fh.setLevel(logging.DEBUG)
+        fh.setFormatter(ff)
+        logger.addHandler(fh)
+

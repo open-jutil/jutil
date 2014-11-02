@@ -1,3 +1,4 @@
+import jutil
 import jutil.norms as norms
 import jutil.lnsrch as lnsrch
 from jutil.minimizer import minimize
@@ -5,7 +6,20 @@ import numpy as np
 import numpy.linalg as la
 import logging
 
-logging.basicConfig(level=logging.INFO)
+jutil.misc.setup_logging()
+#logger = logging.getLogger('jutil')
+#logger.setLevel(logging.DEBUG)
+#ch = logging.StreamHandler()
+#ch.setLevel(logging.INFO)
+#fh = logging.FileHandler('jutil.log')
+#fh.setLevel(logging.DEBUG)
+#ff = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+#cf = logging.Formatter('jutil:%(message)s')
+#ch.setFormatter(cf)
+#fh.setFormatter(ch)
+#logger.addHandler(ch)
+#logger.addHandler(fh)
+
 n = 100
 p = 2#1.1
 q = 1. / (1. - (1. / p))
@@ -29,6 +43,9 @@ class CostFunction(object):
 
     def hess_dot(self, x, vec):
         return self._norm.hess_dot(x - self._y, vec) / self.m
+
+    def hess_diag(self, x):
+        return np.ones_like(x)
 
     @property
     def chisq(self):

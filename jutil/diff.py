@@ -20,7 +20,7 @@ def fd_jac(fun, x, epsilon=1e-6):
     f0 = fun(x)
     return np.asarray([
         (fun(x + epsilon * np.eye(len(x), 1, -i).squeeze()) - f0)
-         for i in xrange(len(x))]) / epsilon
+         for i in xrange(len(x))]).T / epsilon
 
 
 def fd_jac_dot(fun, x, vec, epsilon=1e-6):
