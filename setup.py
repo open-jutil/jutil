@@ -9,7 +9,7 @@ MAINTAINER          = 'Joern Ungermann'
 MAINTAINER_EMAIL    = 'j.ungermann@fz-juelich.de'
 URL                 = ''
 VERSION             = '0.1.0-dev'
-PYTHON_VERSION      = (2, 5)
+PYTHON_VERSION      = (2, 7)
 DEPENDENCIES        = {
                         'numpy': (1, 6),
                         'cython': (0, 20),
@@ -51,22 +51,19 @@ def hg_version():
 
 
 def write_version_py(filename='jutil/version.py'):
-    template = "# THIS FILE IS GENERATED FROM THE JUTIL SETUP.PY " +\
-    '\nversion="%s"\nHG_REVISION="%s"'
-    HG_REV = hg_version()
-    vfile = open(os.path.join(os.path.dirname(__file__),
-                              filename), 'w')
-    try:
-        vfile.write(template % (VERSION, HG_REV))
-    finally:
-        vfile.close()
+    version_string = "# THIS FILE IS GENERATED FROM THE JUTIL SETUP.PY\n" + \
+        'version="{}"\n' + \
+        'HG_REVISION="{}"\n'.format(VERSION, hg_version())
+    with open(os.path.join(os.path.dirname(__file__),
+                           filename), 'w') as vfile:
+        vfile.write(version_string)
 
 
 def get_package_version(package):
     version = []
     for version_attr in ('version', 'VERSION', '__version__'):
-        if hasattr(package, version_attr) \
-                and isinstance(getattr(package, version_attr), str):
+        if (hasattr(package, version_attr) and
+                isinstance(getattr(package, version_attr), str)):
             version_info = getattr(package, version_attr, '')
             for part in re.split('\D+', version_info):
                 try:

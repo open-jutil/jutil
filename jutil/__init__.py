@@ -1,9 +1,15 @@
+#
+# Copyright 2014 by Forschungszentrum Juelich GmbH
+# Author: J. Ungermann
+#
+
 import logging
 
 from . import cg
 from . import cgne
 from . import costfunction
 from . import diff
+from . import fft
 from . import linalg
 from . import lnsrch
 from . import lsqr

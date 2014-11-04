@@ -1,7 +1,17 @@
+#
+# Copyright 2014 by Forschungszentrum Juelich GmbH
+# Author: J. Ungermann
+#
+
 import numpy as np
 
 
 def _fft(x):
+    """
+    Fast Fourier Transform.
+
+    Implemented here for reference of numpy behaviour. Do not use!.
+    """
     n = len(x)
     result = np.ndarray(n, dtype=np.complex)
     for m in np.arange(n):
@@ -10,6 +20,11 @@ def _fft(x):
 
 
 def _ifft(x):
+    """
+    Inverse Fast Fourier Transform.
+
+    Implemented here for reference of numpy behaviour. Do not use!.
+    """
     n = len(x)
     result = np.ndarray(n, dtype=np.complex)
     for m in np.arange(n):
@@ -18,6 +33,11 @@ def _ifft(x):
 
 
 def _rfft(x):
+    """
+    Real Fast Fourier Transform.
+
+    Implemented here for reference of numpy behaviour. Do not use!.
+    """
     n = len(x)
     result = np.zeros(n / 2 + 1, dtype=np.complex)
     for m in range(len(result)):
@@ -26,6 +46,11 @@ def _rfft(x):
 
 
 def _irfft(x, n=None):
+    """
+    Inverse Real Fast Fourier Transform.
+
+    Implemented here for reference of numpy behaviour. Do not use!.
+    """
     if n is None:
         n = 2 * (len(x) - 1)
     xp = np.ndarray(n, dtype=np.complex)
@@ -48,33 +73,93 @@ def _irfft(x, n=None):
     return result / n
 
 
-def _rfftn(x):
+def _rfft2(x):
+    """
+    2-D Real Fast Fourier Transform.
+
+    Implemented here for reference of numpy behaviour. Do not use!.
+    """
     return np.fft.fft(np.fft.rfft(x, axis=1), axis=0)
 
 
-def _irfftn(x, n=None):
+def _irfft2(x, n=None):
+    """
+    2-D Inverse Real Fast Fourier Transform.
+
+    Implemented here for reference of numpy behaviour. Do not use!.
+    """
     if n is None:
         n = 2 * (x.shape[1] - 1)
     return np.fft.irfft(np.fft.ifft(x, axis=0), n=n, axis=1)
 
 
 def fft_adj(x):
+    """
+    Adjoint of Fast Fourier Transform, that is the product of the adjoint Jacobian of the
+    numpy fft with vector x.
+
+    Parameters
+    ----------
+    x : array_like
+
+    Returns
+    -------
+    array_like
+    """
     n = len(x)
     return np.fft.ifft(x) * n
 
 
 def ifft_adj(x):
+    """
+    Adjoint of Inverse Fast Fourier Transform, that is the product of the adjoint Jacobian of the
+    numpy ifft with vector x.
+
+    Parameters
+    ----------
+    x : array_like
+
+    Returns
+    -------
+    array_like
+    """
     n = len(x)
     return np.fft.fft(x) / n
 
 
 def rfft_adj(x, n=None):
+    """
+    Adjoint of Real Fast Fourier Transform, that is the product of the adjoint Jacobian of the
+    numpy rfft with vector x.
+
+    Parameters
+    ----------
+    x : array_like
+    n : int, optional
+        length of original, untransformed vector
+
+    Returns
+    -------
+    array_like
+    """
     if n is None:
         n = 2 * (len(x) - 1)
     return np.fft.ifft(x, n=n).real * n
 
 
 def irfft_adj(x):
+    """
+    Adjoint of Inverse Real Fast Fourier Transform, that is the product of the adjoint Jacobian 
+    of the numpy irfft with vector x.
+
+    Parameters
+    ----------
+    x : array_like
+
+    Returns
+    -------
+    array_like
+    """
     n_out = len(x) / 2 + 1
     xp = np.fft.fft(x) / len(x)
     if len(x) % 2 == 0:
@@ -86,7 +171,22 @@ def irfft_adj(x):
     return xp[:n_out]
 
 
-def rfftn_adj(x, n=None):
+def rfft2_adj(x, n=None):
+    """
+    Adjoint of the 2-D Real Fast Fourier Transform, that is the product of the adjoint 
+    Jacobian of the numpy rfftn with vector x.
+
+    Parameters
+    ----------
+    x : array_like
+    n : int, optional
+        Length of second dimension of original array (the one, the size of which is 
+        changed by employing the rfft2)
+
+    Returns
+    -------
+    array_like
+    """
     if n is None:
         n = 2 * (x.shape[1] - 1)
     xp = np.zeros((x.shape[0], n), dtype=x.dtype)
@@ -94,7 +194,19 @@ def rfftn_adj(x, n=None):
     return np.fft.ifftn(xp).real * x.shape[0] * n
 
 
-def irfftn_adj(x):
+def irfft2_adj(x):
+    """
+    Adjoint of the 2-D Inverse Real Fast Fourier Transform, that is the product of the
+    adjoint Jacobian of the numpy irfftn with vector x.
+
+    Parameters
+    ----------
+    x : array_like
+
+    Returns
+    -------
+    array_like
+    """
     n_out = x.shape[1] / 2 + 1
     xp = np.fft.fft(x, axis=1) / x.shape[1]
     if x.shape[1] % 2 == 0:

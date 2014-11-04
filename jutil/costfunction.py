@@ -97,7 +97,7 @@ class LeastSquaresCostFunction(AbstractCostFunction):
         self._jac = self._func_jac(x)
 
     def _update(self, x):
-        if np.any(self._x != x):
+        if self._x is None or np.any(self._x != x):
              self._y = self._func(x)
              self._x = x
 
