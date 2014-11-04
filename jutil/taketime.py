@@ -1,3 +1,8 @@
+#
+# Copyright 2014 by Forschungszentrum Juelich GmbH
+# Author: J. Ungermann
+#
+
 import time
 import logging
 
@@ -33,4 +38,3 @@ class TakeTime(object):
         returns time passes sind the timer was started.
         """
         return time.time() - self.t0
-

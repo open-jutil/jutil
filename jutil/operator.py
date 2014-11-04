@@ -1,3 +1,8 @@
+#
+# Copyright 2014 by Forschungszentrum Juelich GmbH
+# Author: J. Ungermann
+#
+
 import numpy as np
 
 
@@ -152,6 +157,7 @@ class Dot(object):
                 self.T = Dot(B.T, A.T, a=a, adjoint=self)
         else:
             self.T = adjoint
+
     def _dot(self, x):
         return self._A.dot(self._B.dot(x))
 
@@ -190,7 +196,7 @@ class Plus(object):
         assert self._A.shape == self._B.shape
         if adjoint is None:
             if hasattr(B, "T") and hasattr(A, "T"):
-                 self.T = Plus(A.T, B.T, adjoint=self)
+                self.T = Plus(A.T, B.T, adjoint=self)
         else:
             self.T = adjoint
 
@@ -273,7 +279,7 @@ class HStack(object):
         self._shape = (As[0].shape[0], self._split[-1])
         if adjoint is None:
             if all([hasattr(A, "T") for A in As]):
-                 self.T = VStack([A.T for A in As], adjoint=self)
+                self.T = VStack([A.T for A in As], adjoint=self)
         else:
             self.T = adjoint
 
@@ -309,7 +315,7 @@ class VStack(object):
         self._shape = (sum([A.shape[0] for A in As]), As[0].shape[1])
         if adjoint is None:
             if all([hasattr(A, "T") for A in As]):
-                 self.T = HStack([A.T for A in As], adjoint=self)
+                self.T = HStack([A.T for A in As], adjoint=self)
         else:
             self.T = adjoint
 
@@ -319,4 +325,3 @@ class VStack(object):
     @property
     def shape(self):
         return self._shape
-

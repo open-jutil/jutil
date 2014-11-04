@@ -1,3 +1,8 @@
+#
+# Copyright 2014 by Forschungszentrum Juelich GmbH
+# Author: J. Ungermann
+#
+
 import numpy as np
 import numpy.linalg as la
 from jutil.lnsrch import lnsrch
@@ -24,7 +29,7 @@ def get_chi_square_probability(chisq, N):
 def _print_info(log, it, J, disq, normb):
     chisq_str, disq_str, q_str = "", "", ""
     if hasattr(J, "chisq_m") and hasattr(J, "chisq_a") and J.chisq_m is not None and J.chisq_a is not None:
-        chisq_str =  "(meas= {chisqm} / apr= {chisqa} )".format(chisqm=J.chisq_m, chisqa=J.chisq_a)
+        chisq_str = "(meas= {chisqm} / apr= {chisqa} )".format(chisqm=J.chisq_m, chisqa=J.chisq_a)
     if disq and not np.isnan(disq):
         disq_str = " / d_i^2/n= {disq}".format(disq=disq)
     if hasattr(J, "m"):
@@ -183,7 +188,7 @@ class Minimizer(object):
             J.cnt_call, J.cnt_jac, J.cnt_hess_dot, J.cnt_hess, J.cnt_hess_diag))
 
         result = OptimizeResult({
-            "x" : x_i,
+            "x": x_i,
             "success": True,
             "fun": chisq,
             "jac": -b,
@@ -513,4 +518,3 @@ def scipy_minimize(J, x0, method=None, options=None, tol=None):
     return sopt.minimize(J.__call__, x0, jac=J.jac, hessp=J.hess_dot,
                          method=method, tol=tol, options=options,
                          callback=print_info)
-

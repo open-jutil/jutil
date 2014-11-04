@@ -1,3 +1,8 @@
+#
+# Copyright 2014 by Forschungszentrum Juelich GmbH
+# Author: J. Ungermann
+#
+
 import numpy as np
 import numpy.linalg as la
 import logging
@@ -157,7 +162,7 @@ def conj_grad_tall_solve(A, bs, P=None, x_0=None,
         alphas[alphas == 0] = 1
 
     LOG.info("CG needed {}{}  iterations to reduce to {} {}".format(
-        ("max=" if (i == max_iter) else  ""), i, la.norm(rs),
+        ("max=" if (i == max_iter) else ""), i, la.norm(rs),
         np.asarray([la.norm(r) for r in rs.T]) / norms_b, norms_b))
 
     return xs
@@ -177,16 +182,15 @@ def conj_grad_minimize(J, x_0=None,
         A, b, P=P, max_iter=max_iter, abs_tol=abs_tol, rel_tol=rel_tol, verbose=verbose)
 
     result = jutil.minimizer.OptimizeResult({
-            "x" : x_f,
-            "success": True,
-            "fun": None,
-            "jac": None,
-            "nit": None,
-            "nfev": J.cnt_call,
-            "njev": J.cnt_jac,
-            "nhev": J.cnt_hess,
-            "nhdev": J.cnt_hess_dot,
-            "nhdiagev": J.cnt_hess_diag,
-        })
+        "x": x_f,
+        "success": True,
+        "fun": None,
+        "jac": None,
+        "nit": None,
+        "nfev": J.cnt_call,
+        "njev": J.cnt_jac,
+        "nhev": J.cnt_hess,
+        "nhdev": J.cnt_hess_dot,
+        "nhdiagev": J.cnt_hess_diag,
+    })
     return result
-

@@ -1,12 +1,17 @@
+#
+# Copyright 2014 by Forschungszentrum Juelich GmbH
+# Author: J. Ungermann
+#
+
 import numpy as np
 import numpy.linalg as la
 import logging
 
 LOG = logging.getLogger(__name__)
 
+
 def cgne_solve(A, b, P=None, x_0=None,
-               max_iter=-1, abs_tol=1e-20, rel_tol=1e-20,
-               verbose=False):
+               max_iter=-1, abs_tol=1e-20, rel_tol=1e-20):
 
     if P is None:
         from jutil.operator import Identity
@@ -50,12 +55,9 @@ def cgne_solve(A, b, P=None, x_0=None,
 
         alpha = new_alpha
 
-
-    if verbose:
-        norm = la.norm(t)
-        LOG.info("CGNE needed {}{} iterations to reduce to {} {}".format(
-            ("max=" if (i == max_iter) else ""), i, norm,
-            norm / norm_ATb, norm_ATb))
+    norm = la.norm(t)
+    LOG.info("CGNE needed {}{} iterations to reduce to {} {}".format(
+        ("max=" if (i == max_iter) else ""), i, norm,
+        norm / norm_ATb, norm_ATb))
 
     return x
-

@@ -1,3 +1,8 @@
+#
+# Copyright 2014 by Forschungszentrum Juelich GmbH
+# Author: J. Ungermann
+#
+
 import os
 
 
@@ -7,7 +12,7 @@ def configuration(parent_package='', top_path=None):
     config = Configuration('jutil', parent_package, top_path)
 
     base_path = os.path.join(os.getcwd(), config.local_path)
-    mod = [d for d in os.listdir(base_path) if not '.' in d]
+    mod = [d for d in os.listdir(base_path) if '.' not in d]
 
     for m in mod:
         config.add_subpackage(m)

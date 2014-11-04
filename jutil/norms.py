@@ -1,3 +1,8 @@
+#
+# Copyright 2014 by Forschungszentrum Juelich GmbH
+# Author: J. Ungermann
+#
+
 import numpy as np
 import jutil.linalg
 
@@ -61,10 +66,11 @@ class Ekblom(_BaseNorm):
 
     def hess_diag(self, x):
         return self._p * ((self._p - 2.) * pow(x ** 2 + self._eps, self._p / 2. - 2.) * (x ** 2) +
-                    pow(x ** 2 + self._eps, self._p / 2. - 1.))
+                          pow(x ** 2 + self._eps, self._p / 2. - 1.))
 
     def hess_dot(self, x, vec):
         return self.hess_diag(x) * vec
+
 
 class BiSquared(_BaseNorm):
     def __init__(self, k):
@@ -75,14 +81,14 @@ class BiSquared(_BaseNorm):
 
     def jac(self, x):
         return np.where(np.abs(x) <= self._k,
-            3. * ((1. - (x / self._k) ** 2) ** 2) * 2 * (x / (self._k ** 2)),
-            np.zeros_like(x))
+                        3. * ((1. - (x / self._k) ** 2) ** 2) * 2 * (x / (self._k ** 2)),
+                        np.zeros_like(x))
 
     def hess_diag(self, x):
         return np.where(np.abs(x) <= self._k,
-            - 6. * (1. - (x / self._k) ** 2) *  ((2 * (x / (self._k ** 2))) ** 2) +
-            3. * ((1. - ((x / self._k) ** 2)) ** 2) * 2 * (1 / (self._k ** 2)),
-            np.zeros_like(x))
+                        -6. * (1. - (x / self._k) ** 2) * ((2 * (x / (self._k ** 2))) ** 2) +
+                        3. * ((1. - ((x / self._k) ** 2)) ** 2) * 2 * (1 / (self._k ** 2)),
+                        np.zeros_like(x))
 
     def hess_dot(self, x, vec):
         return self.hess_diag(x) * vec
@@ -100,7 +106,6 @@ class WeightedTV(object):
         self._base = basenorm
         self._weight = weight
         self._indices = [0] + indices
-
 
     def _map(self, x, xp=None):
         if xp is None:

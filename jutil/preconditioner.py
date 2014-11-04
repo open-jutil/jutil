@@ -1,4 +1,10 @@
+#
+# Copyright 2014 by Forschungszentrum Juelich GmbH
+# Author: J. Ungermann
+#
+
 import numpy as np
+
 
 def _safe_inverse(vec):
     nonzero = (vec != 0)
@@ -38,7 +44,3 @@ class CostFunctionPreconditioner(object):
     @property
     def shape(self):
         return (self._J.n, self._J.n)
-
-
-
-

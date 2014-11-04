@@ -1,3 +1,8 @@
+#
+# Copyright 2014 by Forschungszentrum Juelich GmbH
+# Author: J. Ungermann
+#
+
 import scipy.sparse
 import numpy as np
 
@@ -20,7 +25,7 @@ def fd_jac(fun, x, epsilon=1e-6):
     f0 = fun(x)
     return np.asarray([
         (fun(x + epsilon * np.eye(len(x), 1, -i).squeeze()) - f0)
-         for i in xrange(len(x))]).T / epsilon
+        for i in xrange(len(x))]).T / epsilon
 
 
 def fd_jac_dot(fun, x, vec, epsilon=1e-6):
@@ -102,4 +107,4 @@ def get_diff_operator(mask, axis, factor=1):
     rows = np.concatenate([iis + k for k in ks] * 2)
     vals = np.concatenate([-np.ones(factor * len(m1s)), np.ones(factor * len(m1s))])
 
-    return scipy.sparse.coo_matrix((vals, (rows, cols)), (factor * n,factor * n)).tocsr()
+    return scipy.sparse.coo_matrix((vals, (rows, cols)), (factor * n, factor * n)).tocsr()

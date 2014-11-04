@@ -1,3 +1,8 @@
+#
+# Copyright 2014 by Forschungszentrum Juelich GmbH
+# Author: J. Ungermann
+#
+
 import abc
 import numpy as np
 import jutil.norms
@@ -41,12 +46,15 @@ class AbstractCostFunction(object):
     @abc.abstractmethod
     def __call__(self, x):
         pass
+
     @abc.abstractmethod
     def jac(self, x):
         pass
+
     @abc.abstractmethod
     def hess_dot(self, x):
         pass
+
     def hess_diag(self, x):
         return np.ones(self.n)
 
@@ -98,8 +106,8 @@ class LeastSquaresCostFunction(AbstractCostFunction):
 
     def _update(self, x):
         if self._x is None or np.any(self._x != x):
-             self._y = self._func(x)
-             self._x = x
+            self._y = self._func(x)
+            self._x = x
 
     def __call__(self, x):
         self._update(x)
@@ -199,7 +207,6 @@ class ScaledCostFunction(AbstractCostFunction):
         if hasattr(J, "chisq_a"):
             self.chisq_a = property(J.chisq_a)
 
-
     def init(self, x):
         self._J.init(self._D.dot(x))
 
@@ -262,10 +269,11 @@ class CountingCostFunction(AbstractCostFunction):
     @property
     def chisq(self):
         return self._J.chisq
+
     @property
     def chisq_m(self):
         return self._J.chisq_m if hasattr(self._J, "chisq_m") else None
+
     @property
     def chisq_a(self):
         return self._J.chisq_a if hasattr(self._J, "chisq_a") else None
-

@@ -2,18 +2,20 @@
 descr = """Gloripy
 ToDo
 """
-DISTNAME            = 'jutil'
-DESCRIPTION         = 'Juelich Tomographic Inversion Library'
-LONG_DESCRIPTION    = descr
-MAINTAINER          = 'Joern Ungermann'
-MAINTAINER_EMAIL    = 'j.ungermann@fz-juelich.de'
-URL                 = ''
-VERSION             = '0.1.0-dev'
-PYTHON_VERSION      = (2, 7)
-DEPENDENCIES        = {
-                        'numpy': (1, 6),
-                        'cython': (0, 20),
-                      }
+
+
+DISTNAME = 'jutil'
+DESCRIPTION = 'Juelich Tomographic Inversion Library'
+LONG_DESCRIPTION = descr
+MAINTAINER = 'Joern Ungermann'
+MAINTAINER_EMAIL = 'j.ungermann@fz-juelich.de'
+URL = ''
+VERSION = '0.1.0-dev'
+PYTHON_VERSION = (2, 7)
+DEPENDENCIES = {
+    'numpy': (1, 6),
+    'cython': (0, 20),
+}
 
 import os
 import subprocess
@@ -52,8 +54,8 @@ def hg_version():
 
 def write_version_py(filename='jutil/version.py'):
     version_string = "# THIS FILE IS GENERATED FROM THE JUTIL SETUP.PY\n" + \
-        'version="{}"\n' + \
-        'HG_REVISION="{}"\n'.format(VERSION, hg_version())
+        'version = "{}"\n' + \
+        'HG_REVISION = "{}"\n'.format(VERSION, hg_version())
     with open(os.path.join(os.path.dirname(__file__),
                            filename), 'w') as vfile:
         vfile.write(version_string)

@@ -149,7 +149,7 @@ def rfft_adj(x, n=None):
 
 def irfft_adj(x):
     """
-    Adjoint of Inverse Real Fast Fourier Transform, that is the product of the adjoint Jacobian 
+    Adjoint of Inverse Real Fast Fourier Transform, that is the product of the adjoint Jacobian
     of the numpy irfft with vector x.
 
     Parameters
@@ -173,14 +173,14 @@ def irfft_adj(x):
 
 def rfft2_adj(x, n=None):
     """
-    Adjoint of the 2-D Real Fast Fourier Transform, that is the product of the adjoint 
+    Adjoint of the 2-D Real Fast Fourier Transform, that is the product of the adjoint
     Jacobian of the numpy rfftn with vector x.
 
     Parameters
     ----------
     x : array_like
     n : int, optional
-        Length of second dimension of original array (the one, the size of which is 
+        Length of second dimension of original array (the one, the size of which is
         changed by employing the rfft2)
 
     Returns
@@ -216,4 +216,3 @@ def irfft2_adj(x):
         xp[:, 1:n_out] += np.conj(xp[:, :n_out-1:-1])
 #    xp[:, 0] = xp[:, 0].real
     return np.fft.fft(xp[:, :n_out], axis=0) / xp.shape[0]
-

@@ -1,3 +1,8 @@
+#
+# Copyright 2014 by Forschungszentrum Juelich GmbH
+# Author: J. Ungermann
+#
+
 import numpy as np
 import scipy.sparse as sp
 import logging
@@ -26,5 +31,3 @@ def quick_diagonal_product(matrix, diagonal=None):
         for col_idx in xrange(matrix.shape[1]):
             result[col_idx] = np.dot(diagonal, matrix[:, col_idx] ** 2)
         return result
-
-

@@ -1,3 +1,8 @@
+#
+# Copyright 2014 by Forschungszentrum Juelich GmbH
+# Author: J. Ungermann
+#
+
 import numpy as np
 import numpy.linalg as la
 import logging
@@ -51,9 +56,10 @@ def lsqr_solve(A, b, P=None, x_0=None,
 
     Notes
     -----
-    The iteration stops if :math:`||A^T r|| < \mathrm{abs\_tol}`, :math:`||A^T r|| / ||A^T
-    b|| < \mathrm{rel\_tol}, 1 - (||r_{k+1}|| / ||r_k||) <
-    \mathrm{rel\_change\_tol}`, or the maximum number of iterations is reached.
+    The iteration stops if :math:`||A^T r|| < \mathrm{abs\_tol}`,
+    :math:`||A^T r|| / ||A^T b|| < \mathrm{rel\_tol},
+    1 - (||r_{k+1}|| / ||r_k||) < \mathrm{rel\_change\_tol}`,
+    or the maximum number of iterations is reached.
 
     LSQR uses an iterative method to approximate the solution.
     The number of iterations required to reach a certain accuracy
@@ -116,17 +122,17 @@ def lsqr_solve(A, b, P=None, x_0=None,
             v = np.asarray(P.dot(p)) - beta * v
             alpha = la.norm(v)
             if alpha > 0:
-                v /= alpha;
+                v /= alpha
 
         # Construct and apply next orthogonal transformation (Givens)
         scale = abs(rho_bar) + abs(beta)
         rho = scale * np.hypot(rho_bar / scale, beta / scale)
-        c = rho_bar / rho;
-        s = beta    / rho;
-        theta   =  s * alpha
+        c = rho_bar / rho
+        s = beta / rho
+        theta = s * alpha
         rho_bar = -c * alpha
-        phi     =  c * phi_bar
-        phi_bar =  s * phi_bar
+        phi = c * phi_bar
+        phi_bar = s * phi_bar
 
         # Update x and w
         x += (phi / rho) * w
@@ -138,8 +144,8 @@ def lsqr_solve(A, b, P=None, x_0=None,
         rel_change = 100 * abs(1 - phi_bar / phi_bar_old)
 
         if ((norm_ATr < abs_tol) or
-            (norm_ATr < rel_tol * norm_ATb) or
-            (rel_change < rel_change_tol)):
+                (norm_ATr < rel_tol * norm_ATb) or
+                (rel_change < rel_change_tol)):
             break
         LOG.debug("LSQR, it={} iterations to reduce to {} {} {} {}".format(
             i, phi_bar, norm_ATr, norm_ATr / norm_ATb, rel_change))
@@ -148,6 +154,6 @@ def lsqr_solve(A, b, P=None, x_0=None,
 
     x = np.asarray(P.dot(x))
     LOG.info("LSQR needed {}{} iterations to reduce to {} {} {} {}".format(
-            ("max=" if (i == max_iter) else ""), i, phi_bar,
-            norm_ATr, norm_ATr / norm_ATb, rel_change))
+             ("max=" if (i == max_iter) else ""), i, phi_bar,
+             norm_ATr, norm_ATr / norm_ATb, rel_change))
     return x
