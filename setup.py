@@ -14,7 +14,7 @@ VERSION = '0.1.0-dev'
 PYTHON_VERSION = (2, 7)
 DEPENDENCIES = {
     'numpy': (1, 6),
-    'cython': (0, 20),
+    'cython': (0, 19),
 }
 
 import os
