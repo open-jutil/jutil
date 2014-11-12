@@ -108,3 +108,121 @@ def get_diff_operator(mask, axis, factor=1):
     vals = np.concatenate([-np.ones(factor * len(m1s)), np.ones(factor * len(m1s))])
 
     return scipy.sparse.coo_matrix((vals, (rows, cols)), (factor * n, factor * n)).tocsr()
+
+
+
+def get_mass(shape):
+    n = np.prod(shape)
+    cols, rows, vals_m, vals_l = range(n), range(n), ([4. / 9.] * n), ([8. / 3.] * n)
+
+    for axis in range(len(shape)):
+        mask = np.ones(shape, dtype=bool)
+
+        mask1 = mask.copy().swapaxes(axis, -1)
+        mask1[:, 1:] = mask1[..., 1:] & mask1[..., :-1]
+        mask1[:, 0] = False
+        mask1 = mask1.swapaxes(axis, -1)
+
+        mask2 = mask.copy().swapaxes(axis, -1)
+        mask2[:, :-1] = mask2[..., 1:] & mask2[..., :-1]
+        mask2[:, -1] = False
+        mask2 = mask2.swapaxes(axis, -1)
+
+        offset = mask.strides[axis] / mask.dtype.itemsize
+        indice = np.where(mask.reshape(-1))[0]
+        indmap = dict([(indice[i], i) for i in np.arange(len(indice))])
+
+        val_indice1 = np.where(mask1.reshape(-1))[0]
+        ms1 = [indmap[x] for x in val_indice1 - offset]
+        iis1 = [indmap[x] for x in val_indice1]
+
+        val_indice2 = np.where(mask2.reshape(-1))[0]
+        ms2 = [indmap[x] for x in val_indice2 + offset]
+        iis2 = [indmap[x] for x in val_indice2]
+
+        cols += ms1 + ms2
+        rows += iis1 + iis2
+        vals_m += [1. / 9.] * (len(ms1) + len(ms2))
+        vals_l += [-1. / 3.] * (len(ms1) + len(ms2))
+
+        # ecken: 1. / 36., -1. / 3.
+
+    M = scipy.sparse.coo_matrix((vals_m, (rows, cols)), (n, n)).tocsr()
+    L = scipy.sparse.coo_matrix((vals_l, (rows, cols)), (n, n)).tocsr()
+    return M, L
+
+def f00(x,y):
+    r1 = 1 - abs(x)
+    r2 = 1 - abs(y)
+    r1, r2 = [np.where(x > 0, x, np.zeros_like(x)) for x in [r1, r2]]
+    return r1 * r2
+
+def f00_jac(x, y):
+    r1 = 1 - abs(x)
+    r1_x = -np.sign(x)
+    r2 = 1 - abs(y)
+    r2_y = -np.sign(y)
+    r1, r2 = [np.where(x > 0, x, np.zeros_like(x)) for x in [r1, r2]]
+    r1_x = np.where(r1 > 0, r1_x, np.zeros_like(r1))
+    r2_y = np.where(r2 > 0, r2_y, np.zeros_like(r2))
+    return [r1_x * r2, r1 * r2_y]
+
+
+def f11(x,y):
+    r1 = 1 - abs(1 - x)
+    r2 = 1 - abs(1 - y)
+    r1, r2 = [np.where(x > 0, x, np.zeros_like(x)) for x in [r1, r2]]
+    return r1 * r2
+
+def f11_jac(x, y):
+    r1 = 1 - abs(1 - x)
+    r1_x = np.sign(1 - x)
+    r2 = 1 - abs(1 - y)
+    r2_y = np.sign(1 - y)
+    r1, r2 = [np.where(x > 0, x, np.zeros_like(x)) for x in [r1, r2]]
+    r1_x = np.where(r1 > 0, r1_x, np.zeros_like(r1))
+    r2_y = np.where(r2 > 0, r2_y, np.zeros_like(r2))
+    return [r1_x * r2, r1 * r2_y]
+
+
+def f01(x,y):
+    r1 = 1 - abs(x)
+    r2 = 1 - abs(1 - y)
+    r1, r2 = [np.where(x > 0, x, np.zeros_like(x)) for x in [r1, r2]]
+    return r1 * r2
+
+def f01_jac(x, y):
+    r1 = 1 - abs(x)
+    r1_x = -np.sign(x)
+    r2 = 1 - abs(1 - y)
+    r2_y = np.sign(1 - y)
+    r1, r2 = [np.where(x > 0, x, np.zeros_like(x)) for x in [r1, r2]]
+    r1_x = np.where(r1 > 0, r1_x, np.zeros_like(r1))
+    r2_y = np.where(r2 > 0, r2_y, np.zeros_like(r2))
+    return [r1_x * r2, r1 * r2_y]
+
+"""
+n = 2000
+x, y = np.meshgrid(np.linspace(-3,3,n + 1), np.linspace(-3, 3, n + 1))
+dx = 6. / n
+a, b, h = 0.4, 0.4, 1e-8
+print (f01(a + h, b) - f01(a, b)) / h, (f01(a, b + h) - f01(a, b)) / h
+print f01_jac(a, b)
+print
+print np.trapz(np.trapz(f00(x, y) * f00(x, y), dx=dx), dx=dx)
+print np.trapz(np.trapz(f00(x, y) * f01(x, y), dx=dx), dx=dx)
+print np.trapz(np.trapz(f00(x, y) * f11(x, y), dx=dx), dx=dx)
+
+aj, bj, cj = f00_jac(x, y), f01_jac(x, y), f11_jac(x, y)
+print
+print np.trapz(np.trapz(aj[0] * aj[0] + aj[1] * aj[1], dx=dx), dx=dx)
+print np.trapz(np.trapz(aj[0] * bj[0] + aj[1] * bj[1], dx=dx), dx=dx)
+print np.trapz(np.trapz(aj[0] * cj[0] + aj[1] * cj[1], dx=dx), dx=dx)
+print np.trapz(np.trapz(bj[0] * cj[0] + bj[1] * cj[1], dx=dx), dx=dx)
+print np.trapz(np.trapz(cj[0] * cj[0] + cj[1] * cj[1], dx=dx), dx=dx)
+
+"""
+
+
+
+
