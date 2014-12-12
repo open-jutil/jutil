@@ -4,7 +4,17 @@
 #
 
 import numpy as np
+import os
 
+NTHREADS = int(os.getenv("OMP_NUM_THREADS", 1))
+
+try:
+    import pyfftw
+    fftmod = pyfftw.interfaces.numpy_fft
+except ImportError:
+    fftmod = np.fft
+
+#fftmod = np.fft
 
 def _fft(x):
     """
@@ -79,7 +89,7 @@ def _rfft2(x):
 
     Implemented here for reference of numpy behaviour. Do not use!.
     """
-    return np.fft.fft(np.fft.rfft(x, axis=1), axis=0)
+    return fftmod.fft(fftmod.rfft(x, axis=1), axis=0)
 
 
 def _irfft2(x, n=None):
@@ -90,7 +100,7 @@ def _irfft2(x, n=None):
     """
     if n is None:
         n = 2 * (x.shape[1] - 1)
-    return np.fft.irfft(np.fft.ifft(x, axis=0), n=n, axis=1)
+    return fftmod.irfft(fftmod.ifft(x, axis=0), n=n, axis=1)
 
 
 def fft_adj(x):
@@ -107,7 +117,7 @@ def fft_adj(x):
     array_like
     """
     n = len(x)
-    return np.fft.ifft(x) * n
+    return fftmod.ifft(x) * n
 
 
 def ifft_adj(x):
@@ -124,7 +134,7 @@ def ifft_adj(x):
     array_like
     """
     n = len(x)
-    return np.fft.fft(x) / n
+    return fftmod.fft(x) / n
 
 
 def rfft_adj(x, n=None):
@@ -144,7 +154,7 @@ def rfft_adj(x, n=None):
     """
     if n is None:
         n = 2 * (len(x) - 1)
-    return np.fft.ifft(x, n=n).real * n
+    return fftmod.ifft(x, n=n).real * n
 
 
 def irfft_adj(x):
@@ -161,7 +171,7 @@ def irfft_adj(x):
     array_like
     """
     n_out = len(x) / 2 + 1
-    xp = np.fft.fft(x) / len(x)
+    xp = fftmod.fft(x) / len(x)
     if len(x) % 2 == 0:
         xp[1:n_out - 1] += np.conj(xp[:n_out - 1:-1])
 #        xp[n_out - 1] = xp[n_out - 1].real
@@ -191,7 +201,7 @@ def rfft2_adj(x, n=None):
         n = 2 * (x.shape[1] - 1)
     xp = np.zeros((x.shape[0], n), dtype=x.dtype)
     xp[:, :x.shape[1]] = x
-    return np.fft.ifftn(xp).real * x.shape[0] * n
+    return fftmod.ifftn(xp).real * x.shape[0] * n
 
 
 def irfft2_adj(x):
@@ -208,11 +218,11 @@ def irfft2_adj(x):
     array_like
     """
     n_out = x.shape[1] / 2 + 1
-    xp = np.fft.fft(x, axis=1) / x.shape[1]
+    xp = fftmod.fft(x, axis=1) / x.shape[1]
     if x.shape[1] % 2 == 0:
         xp[:, 1:n_out - 1] += np.conj(xp[:, :n_out-1:-1])
 #        xp[:, n_out - 1] = xp[:, n_out - 1].real
     else:
         xp[:, 1:n_out] += np.conj(xp[:, :n_out-1:-1])
 #    xp[:, 0] = xp[:, 0].real
-    return np.fft.fft(xp[:, :n_out], axis=0) / xp.shape[0]
+    return fftmod.fft(xp[:, :n_out], axis=0) / xp.shape[0]
