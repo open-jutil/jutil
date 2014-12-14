@@ -5,16 +5,59 @@
 
 import numpy as np
 import os
+import functools
 
 NTHREADS = int(os.getenv("OMP_NUM_THREADS", 1))
 
+npmod = np.fft
 try:
     import pyfftw
-    fftmod = pyfftw.interfaces.numpy_fft
+    fftwmod = pyfftw.interfaces.numpy_fft
+    HAVE_FFTW = True
 except ImportError:
-    fftmod = np.fft
+    HAVE_FFTW = False
 
-#fftmod = np.fft
+def configure(module=None, threads=NTHREADS):
+    if module is None:
+        module = "fftw" if HAVE_FFTW else "numpy"
+    global fft
+    global ifft
+    global rfft
+    global irfft
+    global rfft2
+    global irfft2
+    global fftn
+    global ifftn
+    global rfftn
+    global irfftn
+    if module == "numpy":
+        fft = npmod.fft
+        ifft = npmod.ifft
+        rfft2 = npmod.rfft2
+        irfft2 = npmod.irfft2
+        rfft = npmod.rfft
+        irfft = npmod.irfft
+        fftn = npmod.fftn
+        ifftn = npmod.ifftn
+        rfftn = npmod.rfftn
+        irfftn = npmod.irfftn
+    elif module == "fftw":
+        fft = functools.partial(fftwmod.fft, threads=threads)
+        ifft = functools.partial(fftwmod.ifft, threads=threads)
+        rfft = functools.partial(fftwmod.rfft, threads=threads)
+        irfft = functools.partial(fftwmod.irfft, threads=threads)
+        rfft2 = functools.partial(fftwmod.rfft2, threads=threads)
+        irfft2 = functools.partial(fftwmod.irfft2, threads=threads)
+        fftn = functools.partial(fftwmod.fftn, threads=threads)
+        ifftn = functools.partial(fftwmod.ifftn, threads=threads)
+        rfftn = functools.partial(fftwmod.rfftn, threads=threads)
+        irfftn = functools.partial(fftwmod.irfftn, threads=threads)
+    else:
+        raise ValueError("configure accepts only 'numpy' and 'fftw', not '{}'".format(module))
+
+configure()
+
+#ftmod = np.fft
 
 def _fft(x):
     """
@@ -89,7 +132,7 @@ def _rfft2(x):
 
     Implemented here for reference of numpy behaviour. Do not use!.
     """
-    return fftmod.fft(fftmod.rfft(x, axis=1), axis=0)
+    return fft(rfft(x, axis=1), axis=0)
 
 
 def _irfft2(x, n=None):
@@ -100,7 +143,7 @@ def _irfft2(x, n=None):
     """
     if n is None:
         n = 2 * (x.shape[1] - 1)
-    return fftmod.irfft(fftmod.ifft(x, axis=0), n=n, axis=1)
+    return irfft(ifft(x, axis=0), n=n, axis=1)
 
 
 def fft_adj(x):
@@ -117,7 +160,7 @@ def fft_adj(x):
     array_like
     """
     n = len(x)
-    return fftmod.ifft(x) * n
+    return ifft(x) * n
 
 
 def ifft_adj(x):
@@ -134,7 +177,7 @@ def ifft_adj(x):
     array_like
     """
     n = len(x)
-    return fftmod.fft(x) / n
+    return fft(x) / n
 
 
 def rfft_adj(x, n=None):
@@ -154,7 +197,7 @@ def rfft_adj(x, n=None):
     """
     if n is None:
         n = 2 * (len(x) - 1)
-    return fftmod.ifft(x, n=n).real * n
+    return ifft(x, n=n).real * n
 
 
 def irfft_adj(x):
@@ -171,7 +214,7 @@ def irfft_adj(x):
     array_like
     """
     n_out = len(x) / 2 + 1
-    xp = fftmod.fft(x) / len(x)
+    xp = fft(x) / len(x)
     if len(x) % 2 == 0:
         xp[1:n_out - 1] += np.conj(xp[:n_out - 1:-1])
 #        xp[n_out - 1] = xp[n_out - 1].real
@@ -201,7 +244,7 @@ def rfft2_adj(x, n=None):
         n = 2 * (x.shape[1] - 1)
     xp = np.zeros((x.shape[0], n), dtype=x.dtype)
     xp[:, :x.shape[1]] = x
-    return fftmod.ifftn(xp).real * x.shape[0] * n
+    return ifftn(xp).real * x.shape[0] * n
 
 
 def irfft2_adj(x):
@@ -218,11 +261,11 @@ def irfft2_adj(x):
     array_like
     """
     n_out = x.shape[1] / 2 + 1
-    xp = fftmod.fft(x, axis=1) / x.shape[1]
+    xp = fft(x, axis=1) / x.shape[1]
     if x.shape[1] % 2 == 0:
         xp[:, 1:n_out - 1] += np.conj(xp[:, :n_out-1:-1])
 #        xp[:, n_out - 1] = xp[:, n_out - 1].real
     else:
         xp[:, 1:n_out] += np.conj(xp[:, :n_out-1:-1])
 #    xp[:, 0] = xp[:, 0].real
-    return fftmod.fft(xp[:, :n_out], axis=0) / xp.shape[0]
+    return fft(xp[:, :n_out], axis=0) / xp.shape[0]
