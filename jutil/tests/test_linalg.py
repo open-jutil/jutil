@@ -1,5 +1,5 @@
 import jutil.linalg
-import scipy.sparse as sp
+import scipy.sparse
 import numpy as np
 from numpy.testing import assert_almost_equal
 
@@ -18,13 +18,13 @@ def execute_matrix(A, diag=None):
 
 
 def test_sparse_csr():
-    A = sp.csr_matrix(np.arange(25).reshape(5, 5) / 25.)
+    A = scipy.sparse.csr_matrix(np.arange(25).reshape(5, 5) / 25.)
     execute_matrix(A)
     execute_matrix(A, np.arange(5.))
 
 
 def test_sparse_csc():
-    A = sp.csc_matrix(np.arange(25).reshape(5, 5) / 25.)
+    A = scipy.sparse.csc_matrix(np.arange(25).reshape(5, 5) / 25.)
     execute_matrix(A)
     execute_matrix(A, np.arange(5.))
 

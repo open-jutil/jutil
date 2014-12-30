@@ -1,5 +1,5 @@
 import numpy as np
-import scipy.sparse as sp
+import scipy.sparse
 from jutil.norms import *
 from numpy.testing import assert_almost_equal
 
@@ -55,7 +55,7 @@ def test_tv():
     assert_almost_equal(S1, S2)
 
 
-weight = sp.csr_matrix(np.arange(25).reshape(5, 5) / 25.)
+weight = scipy.sparse.csr_matrix(np.arange(25).reshape(5, 5) / 25.)
 for name, norm in [
         ("L1", L1()),
         ("L2Square", L2Square()),
@@ -69,7 +69,7 @@ for name, norm in [
         ("WeightedNorm_Huber", WeightedNorm(Huber(1.5), weight))
         ]:
     current_module = __import__(__name__)
-    test_function = (lambda y : lambda : execute_norm(y))(norm)
+    test_function = (lambda y: lambda: execute_norm(y))(norm)
     test_function.__name__ = "test_" + name
     setattr(current_module, test_function.__name__, test_function)
 

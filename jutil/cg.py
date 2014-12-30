@@ -189,4 +189,3 @@ def conj_grad_minimize(J, x_0=None,
             "nhdiagev": J.cnt_hess_diag,
         })
     return result
-

@@ -1,7 +1,10 @@
-#
+# -*- coding: utf-8 -*-
 # Copyright 2014 by Forschungszentrum Juelich GmbH
 # Author: J. Ungermann
 #
+"""Docstring Jutil
+
+"""  # TODO: Docstring!
 
 import logging
 
@@ -20,7 +23,8 @@ from . import operator
 from . import preconditioner
 from . import splitbregman
 from . import taketime
-from . import version
+from .version import version as __version__
+from .version import hg_revision as __hg_revision__
 
-LOG = logging.getLogger(__name__)
-LOG.info("Starting JUTIL V{} HG{}".format(version.version, version.HG_REVISION))
+_log = logging.getLogger(__name__)
+_log.info("Starting JUTIL V{} HG{}".format(__version__, __hg_revision__))

@@ -24,7 +24,7 @@ def get_chi_square_probability(chisq, N):
 def _print_info(log, it, J, disq, normb):
     chisq_str, disq_str, q_str = "", "", ""
     if hasattr(J, "chisq_m") and hasattr(J, "chisq_a") and J.chisq_m is not None and J.chisq_a is not None:
-        chisq_str =  "(meas= {chisqm} / apr= {chisqa} )".format(chisqm=J.chisq_m, chisqa=J.chisq_a)
+        chisq_str = "(meas= {chisqm} / apr= {chisqa} )".format(chisqm=J.chisq_m, chisqa=J.chisq_a)
     if disq and not np.isnan(disq):
         disq_str = " / d_i^2/n= {disq}".format(disq=disq)
     if hasattr(J, "m"):
