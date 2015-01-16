@@ -70,7 +70,7 @@ def conj_grad_solve(A, b, P=None, x_0=None,
     xs = [0 for _ in xrange(len(rel_tol))]
 
     i = 0
-    while i <= max_iter:
+    while i < max_iter:
         norm = la.norm(r)
         norm_div_norm_b = norm / norm_b
         for j in xrange(len(rel_tol)):
@@ -87,6 +87,7 @@ def conj_grad_solve(A, b, P=None, x_0=None,
         v = A.dot(p)
         pAp = np.dot(v, p)
         if pAp <= 0:  # negative curvature
+            LOG.warn("CG encountered negative curvature. Is matrix really s.p.d.?")
             break
         lambd = alpha / pAp
         assert not np.isnan(lambd)
