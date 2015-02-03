@@ -17,6 +17,7 @@ try:
 except ImportError:
     HAVE_FFTW = False
 
+
 def configure(module=None, threads=NTHREADS):
     if module is None:
         module = "fftw" if HAVE_FFTW else "numpy"
@@ -42,6 +43,8 @@ def configure(module=None, threads=NTHREADS):
         rfftn = npmod.rfftn
         irfftn = npmod.irfftn
     elif module == "fftw":
+        assert HAVE_FFTW
+
         fft = functools.partial(fftwmod.fft, threads=threads)
         ifft = functools.partial(fftwmod.ifft, threads=threads)
         rfft = functools.partial(fftwmod.rfft, threads=threads)
@@ -55,9 +58,6 @@ def configure(module=None, threads=NTHREADS):
     else:
         raise ValueError("configure accepts only 'numpy' and 'fftw', not '{}'".format(module))
 
-configure()
-
-#ftmod = np.fft
 
 def _fft(x):
     """
@@ -217,10 +217,8 @@ def irfft_adj(x):
     xp = fft(x) / len(x)
     if len(x) % 2 == 0:
         xp[1:n_out - 1] += np.conj(xp[:n_out - 1:-1])
-#        xp[n_out - 1] = xp[n_out - 1].real
     else:
         xp[1:n_out] += np.conj(xp[:n_out - 1:-1])
-#    xp[0] = xp[0].real
     return xp[:n_out]
 
 
@@ -263,9 +261,10 @@ def irfft2_adj(x):
     n_out = x.shape[1] / 2 + 1
     xp = fft(x, axis=1) / x.shape[1]
     if x.shape[1] % 2 == 0:
-        xp[:, 1:n_out - 1] += np.conj(xp[:, :n_out-1:-1])
-#        xp[:, n_out - 1] = xp[:, n_out - 1].real
+        xp[:, 1:n_out - 1] += np.conj(xp[:, :n_out - 1:-1])
     else:
-        xp[:, 1:n_out] += np.conj(xp[:, :n_out-1:-1])
-#    xp[:, 0] = xp[:, 0].real
+        xp[:, 1:n_out] += np.conj(xp[:, :n_out - 1:-1])
     return fft(xp[:, :n_out], axis=0) / xp.shape[0]
+
+
+configure()

@@ -30,7 +30,7 @@ def cgne_solve(A, b, P=None, x_0=None,
     alpha = np.dot(s, s)
 
     i = 0
-    while i <= max_iter:
+    while i < max_iter:
         norm = la.norm(t)
         if (norm < abs_tol) or (norm / norm_ATb < rel_tol):
             break
