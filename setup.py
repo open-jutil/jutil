@@ -54,8 +54,8 @@ def hg_version():
 
 def write_version_py(filename='jutil/version.py'):
     version_string = "# THIS FILE IS GENERATED FROM THE JUTIL SETUP.PY\n" + \
-        'version = "{}"\n' + \
-        'HG_REVISION = "{}"\n'.format(VERSION, hg_version())
+        'version = "{}"\n'.format(VERSION) + \
+        'HG_REVISION = "{}"\n'.format(hg_version())
     with open(os.path.join(os.path.dirname(__file__),
                            filename), 'w') as vfile:
         vfile.write(version_string)
