@@ -5,4 +5,5 @@ syntax: glob
 *.so
 *.os
 *.c
+.spyderproject
 build*
