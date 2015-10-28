@@ -126,9 +126,9 @@ class LeastSquaresCostFunction(AbstractCostFunction):
         self._update(x)
         return self._jac.T.dot(self._norm.hess_dot(self._y, self._jac.dot(vec)))
 
-    def hess_diag(self, x):
-        self._update(x)
-        return jutil.linalg.quick_diagonal_product(self._jac, self._norm.hess_diag(self._y))
+#    def hess_diag(self, x):
+#        self._update(x)
+#        return jutil.linalg.quick_diagonal_product(self._jac, self._norm.hess_diag(self._y))
 
 
 class WrapperCostFunction(AbstractCostFunction):

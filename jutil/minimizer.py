@@ -141,6 +141,7 @@ class Minimizer(object):
 
         disq = 0.0
         it = 0
+        chisq = J.chisq
         converged = {}
         while True:
             if hasattr(J, "update_jacobian"):
