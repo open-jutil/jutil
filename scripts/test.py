@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import matplotlib
 matplotlib.use('Agg')
 import jutil.minimizer as minimizer
@@ -169,7 +171,7 @@ def split_bregman_2d_test(image_t, image, ig=None, weight=100, max_iter=300, mu=
     """
     i = 0
     for j in range(0, 256, 2):
-        print i
+        print(i)
         for k in range(0, 256, 4):
             delta = (k - j) / 256.
             cols = j + np.asarray(map(int, np.arange(256) * delta))
@@ -184,12 +186,12 @@ def split_bregman_2d_test(image_t, image, ig=None, weight=100, max_iter=300, mu=
 
     image = A.dot(image_t.reshape(-1))
     image = image + 0.01 * image.std() * np.random.randn(*image.shape)
-    print la.norm(image)
+    print(la.norm(image))
 
     ATA_DTD = op.Plus(op.Dot(A.T, A), op.Dot(D.T, D))
 
     x = cg.conj_grad_solve(ATA_DTD, A.T.dot(image), max_iter=300, abs_tol=1e-40, rel_tol=1e-40, verbose=True)
-    print la.norm(x-image_t)
+    print(la.norm(x-image_t))
 
     b = np.zeros(2 * n)
     d = b
@@ -202,9 +204,9 @@ def split_bregman_2d_test(image_t, image, ig=None, weight=100, max_iter=300, mu=
         chisq_m = np.dot(dy, dy) / len(image)
         chisq_a = weight * sum(np.hypot(*np.split(D.dot(xx), 2))) / len(image)
         chisq = chisq_m + chisq_a
-        print "it= {it} / chi^2/m= {chisq} (meas= {chisqm} / apr= {chisqa} ) / {err}".format(
+        print("it= {it} / chi^2/m= {chisq} (meas= {chisqm} / apr= {chisqa} ) / {err}".format(
                it=it, chisq=chisq, chisqm=chisq_m,
-               chisqa=chisq_a, err=error)
+               chisqa=chisq_a, err=error))
 
     it, error = 0, 0
     printInfo(x)
@@ -240,7 +242,7 @@ def split_bregman_2d_test(image_t, image, ig=None, weight=100, max_iter=300, mu=
         printInfo(u)
         if error < tol or it > max_iter:
             break
-    print la.norm(u - image_t)
+    print(la.norm(u - image_t))
     pylab.subplot(1, 3, 1)
     pylab.pcolor(u.reshape(256, 256), vmin=0, vmax=256)
     pylab.subplot(1, 3, 2)
@@ -289,9 +291,9 @@ def split_bregman_2d(image, ig=None, weight=50, max_iter=400, mu=5, lambd=1, tol
         chisq_m = np.dot(dy, dy) / len(u)
         chisq_a = weight * sum(np.hypot(*np.split(D.dot(u), 2))) / len(u)
         chisq = chisq_m + chisq_a
-        print "it= {it} / chi^2/m= {chisq} (meas= {chisqm} / apr= {chisqa} ) / {err}".format(
+        print("it= {it} / chi^2/m= {chisq} (meas= {chisqm} / apr= {chisqa} ) / {err}".format(
                it=it, chisq=chisq, chisqm=chisq_m,
-               chisqa=chisq_a, err=error)
+               chisqa=chisq_a, err=error))
 
     it, error = 0, 0
     printInfo()
@@ -335,7 +337,7 @@ def tv_denoise_2d(image, weight=50, eps=2.e-4, keep_type=False):
     d = np.zeros_like(image)
     i = 0
     while i < n_max_iter:
-        print i
+        print(i)
         d = -px -py
         d[1:] += px[:-1]
         d[:, 1:] += py[:, :-1]
@@ -371,8 +373,7 @@ def _test(Type, name, l1, l2):
     J2._y = J11._y
     with TakeTime("bregman"):
         den = split_bregman_2d_test(J2._y_t, J2._y.reshape(256, 256), weight=200).reshape(-1)
-    print
-    """
+    print("""
 #
     optimize2 = minimizer.Minimizer(minimizer.GaussNewtonStepper())
     optimize2.conv_min_costfunction_gradient = 1e-5 / J2.m
@@ -387,7 +388,7 @@ def _test(Type, name, l1, l2):
         solution11 = optimize1(J11, J11._y)
 #    solution11 = split_bregman_2d(J2._y.reshape(256, 256), weight=400).reshape(-1)
     print
-    """
+    """)
     solution11 = den
     solution2 = den
     img_map = pylab.cm.gray

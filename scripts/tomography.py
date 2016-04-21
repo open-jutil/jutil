@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -43,7 +45,7 @@ def get_tomography_operator(size, skip):
     A = scipy.sparse.lil_matrix((2 * (size ** 2) / (skip ** 2), size ** 2))
     i = 0
     for j in range(0, size, skip):
-        print i
+        print(i)
         for k in range(0, size, skip):
             delta = (k - j) / float(size)
             cols = j + np.asarray(map(int, np.arange(size) * delta))

@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import jutil
 import numpy as np
 
@@ -140,15 +142,15 @@ def _test():
     xsc = 1e-18
     y0, adj = planck(300, 790)
     y1, _ = planck(300 + h, 790)
-    print (y1- y0) / h, adj
+    print((y1- y0) / h, adj)
 
     y0, adj = convert_vmr_to_numberdensity(300, 100, 1e-6)
     y1, _ = convert_vmr_to_numberdensity(300 + h, 100, 1e-6)
-    print (y1- y0) / h, adj
+    print((y1- y0) / h, adj)
 
     y0, adj = convert_vmr_to_emissivity(300, 100, 1e-6, xsc)
     y1, _ = convert_vmr_to_emissivity(300 + h, 100, 1e-6, xsc)
-    print (y1- y0) / h, adj
+    print((y1- y0) / h, adj)
 
 
     y0, adj = model(792, Atmosphere["pressure"], xsc, Atmosphere["temperature"], Atmosphere["CO2"])
@@ -160,8 +162,8 @@ def _test():
         y1, _ = model(792, Atmosphere["pressure"], xsc, t2, Atmosphere["CO2"])
         t2[i] -= h
         adj2[i] = (y1 - y0) / h
-    print adj2
-    print adj
+    print(adj2)
+    print(adj)
 
 def _test2():
     import jutil.minimizer as mini
@@ -177,7 +179,7 @@ def _test2():
 #            (40, mini.GaussNewtonStepper()),
 #            (20, mini.TruncatedQuasiNewtonStepper(1e-4, 10))
             ]:
-        print maxit
+        print(maxit)
         optimize = mini.Minimizer(stepper)
         optimize.conv_max_iteration = maxit
         optimize2 = mini.Minimizer(mini.LevenbergMarquardtPredictorStepper(1, 10.))

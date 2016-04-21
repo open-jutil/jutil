@@ -233,9 +233,9 @@ class Function(object):
     dot(vector)
         Provides multiplication with a vector
     """
-    def __init__(self, (n, m), F, FT=None, a=1, _adjoint=None):
+    def __init__(self, shape, F, FT=None, a=1, _adjoint=None):
         self._F = F
-        self._shape = (n, m)
+        self._shape = shape
         self._a = a
         self.dot = self._dot if a == 1 else self._dot_a
         if _adjoint is None:

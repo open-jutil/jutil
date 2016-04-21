@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import jutil
 import jutil.norms as norms
 import jutil.lnsrch as lnsrch
@@ -23,7 +25,7 @@ jutil.misc.setup_logging()
 n = 100
 p = 2#1.1
 q = 1. / (1. - (1. / p))
-print p, q
+print(p, q)
 
 
 class CostFunction(object):
@@ -63,12 +65,12 @@ x = np.random.random(n)
 J = CostFunction(lAp, x)
 
 P = lambda _, x: (1. / q) * lAq.jac(x)
-print AI**2*n**2
-print P(None, np.ones(n))
+print(AI**2*n**2)
+print(P(None, np.ones(n)))
 tol = {"max_iteration": 10}
 
 minimize(J, np.zeros(len(x)), method="SteepestDescent", tol=tol)
 minimize(J, np.zeros(len(x)), tol=tol)
 minimize(J, np.zeros(len(x)), method="SteepestDescent", options={"preconditioner": P}, tol=tol)
 
-print J(J._y)
+print(J(J._y))

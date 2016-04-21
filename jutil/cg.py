@@ -67,13 +67,13 @@ def conj_grad_solve(A, b, P=None, x_0=None,
     p = P.dot(r)
     alpha = np.dot(r, p)
     norm_b = la.norm(b)
-    xs = [0 for _ in xrange(len(rel_tol))]
+    xs = [0 for _ in range(len(rel_tol))]
 
     i = 0
     while i < max_iter:
         norm = la.norm(r)
         norm_div_norm_b = norm / norm_b
-        for j in xrange(len(rel_tol)):
+        for j in range(len(rel_tol)):
             if norm_div_norm_b < rel_tol[j]:
                 xs[j] = x.copy()
                 if j > 0:
