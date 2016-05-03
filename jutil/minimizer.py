@@ -534,4 +534,4 @@ def scipy_custom_method(
     assert callback is None, "callback is not supported"
     J = jutil.costfunction.WrapperCostFunction(
             fun, len(x0), 1, jac=jac, hess=hess, hess_dot=hessp)
-    return minimize(J, x0, options["methos"], options)
+    return minimize(J, x0, options["method"], options)
