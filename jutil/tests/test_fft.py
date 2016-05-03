@@ -191,7 +191,5 @@ def test_irfft2_adj():
 
 
 if __name__ == '__main__':
-    print "oo"
     from numpy import testing
     testing.run_module_suite()
-    print "oo"
