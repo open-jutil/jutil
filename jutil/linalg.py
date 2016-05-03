@@ -26,8 +26,10 @@ def quick_diagonal_product(matrix, diagonal=None):
             col = matrix.getcol(col_idx)
             result[col_idx] = np.dot(diagonal[col.indices], col.data ** 2)
         return result
-    else:
+    elif type(matrix) is np.ndarray:
         result = np.zeros(diagonal.shape)
         for col_idx in xrange(matrix.shape[1]):
             result[col_idx] = np.dot(diagonal, matrix[:, col_idx] ** 2)
         return result
+    else:
+        raise TypeError("Unsupported type in quick_diagonal_product. Unless an optimized execution is available it were better not to use this kind of product.")

@@ -48,6 +48,8 @@ class OptimizeResult(dict):
     ----------
     x : vector
         Identified minimum
+    success : bool
+        Whether the optimization was successful
     fun : float
         cost function value at minimum
     jac : vector
@@ -519,3 +521,17 @@ def scipy_minimize(J, x0, method=None, options=None, tol=None):
     return sopt.minimize(J.__call__, x0, jac=J.jac, hessp=J.hess_dot,
                          method=method, tol=tol, options=options,
                          callback=print_info)
+
+
+def scipy_custom_method(
+        fun, x0, args, jac, hess, hessp, bounds, constraints, callback, **options):
+    """ 
+    This function may be passed as custom method to scipy.optimize minimize routine to
+    minimize an arbitrary function with jutil algorithms. Only efficient if jac and hessp
+    are provided.
+    """
+    assert bounds is None, "bounds are not supported"
+    assert callback is None, "callback is not supported"
+    J = jutil.costfunction.WrapperCostFunction(
+            fun, len(x0), 1, jac=jac, hess=hess, hess_dot=hessp)
+    return minimize(J, x0, options["methos"], options)
