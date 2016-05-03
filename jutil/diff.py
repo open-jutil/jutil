@@ -82,12 +82,11 @@ def get_diff_operator(mask, axis, factor=1):
     -------
     Sparse Matrix containing the difference operator
     """
-    mask = mask.squeeze()
     n = mask.reshape(-1).sum()
     # Identify elements with valid neighbour
     mask1 = mask.copy().swapaxes(axis, -1)
-    mask1[:, 1:] = mask1[..., 1:] & mask1[..., :-1]
-    mask1[:, 0] = False
+    mask1[..., 1:] = mask1[..., 1:] & mask1[..., :-1]
+    mask1[..., 0] = False
     mask1 = mask1.swapaxes(axis, -1)
 
     # shift for left neighbour
