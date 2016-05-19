@@ -1,4 +1,5 @@
 #
+#
 # Copyright 2014 by Forschungszentrum Juelich GmbH
 # Author: J. Ungermann
 #
@@ -184,6 +185,8 @@ class Minimizer(object):
             if any(converged.values()):
                 self._log.info("Convergence criteria reached. " + str([x for x in converged if converged[x]]))
                 break
+        if hasattr(J, "update_jacobian"):
+            J.update_jacobian(x_i)
         b = -J.jac(x_i)
         _print_info(self._log, it, J, disq, la.norm(b))
 
@@ -525,7 +528,7 @@ def scipy_minimize(J, x0, method=None, options=None, tol=None):
 
 def scipy_custom_method(
         fun, x0, args, jac, hess, hessp, bounds, constraints, callback, **options):
-    """ 
+    """
     This function may be passed as custom method to scipy.optimize minimize routine to
     minimize an arbitrary function with jutil algorithms. Only efficient if jac and hessp
     are provided.
