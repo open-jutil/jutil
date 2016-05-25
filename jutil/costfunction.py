@@ -52,7 +52,7 @@ class AbstractCostFunction(object):
         pass
 
     @abc.abstractmethod
-    def hess_dot(self, x):
+    def hess_dot(self, x, vec):
         pass
 
     def hess_diag(self, x):
@@ -107,7 +107,7 @@ class LeastSquaresCostFunction(AbstractCostFunction):
     def _update(self, x):
         if self._x is None or np.any(self._x != x):
             self._y = self._func(x)
-            self._x = x
+            self._x = x.copy()
 
     def __call__(self, x):
         self._update(x)
@@ -128,7 +128,8 @@ class LeastSquaresCostFunction(AbstractCostFunction):
 
     def hess_diag(self, x):
         self._update(x)
-        return jutil.linalg.quick_diagonal_product(self._jac, self._norm.hess_diag(self._y))
+        result = jutil.linalg.quick_diagonal_product(self._jac, self._norm.hess_diag(self._y))
+        return result
 
 
 class WrapperCostFunction(AbstractCostFunction):
@@ -245,6 +246,10 @@ class CountingCostFunction(AbstractCostFunction):
     def init(self, x):
         if hasattr(self._J, "init"):
             self._J.init(x)
+
+    def update_jacobian(self, x):
+        if hasattr(self._J, "update_jacobian"):
+            self._J.update_jacobian(x)
 
     def __call__(self, x):
         self.cnt_call += 1

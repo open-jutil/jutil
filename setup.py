@@ -1,26 +1,12 @@
-#!python
-descr = """Gloripy
-ToDo
-"""
-
-
+#!/bin/env python
 DISTNAME = 'jutil'
 DESCRIPTION = 'Juelich Tomographic Inversion Library'
-LONG_DESCRIPTION = descr
 MAINTAINER = 'Joern Ungermann'
 MAINTAINER_EMAIL = 'j.ungermann@fz-juelich.de'
-URL = ''
 VERSION = '0.1.0-dev'
-PYTHON_VERSION = (2, 7)
-DEPENDENCIES = {
-    'numpy': (1, 6),
-    'cython': (0, 19),
-}
 
 import os
 import subprocess
-import sys
-import re
 import setuptools
 from numpy.distutils.core import setup
 from distutils.command.build_py import build_py
@@ -46,10 +32,10 @@ def configuration(parent_package='', top_path=None):
 
 def hg_version():
     try:
-        HG_REV = subprocess.check_output(['hg', 'id', '--id']).strip()
+        hg_rev = subprocess.check_output(['hg', 'id', '--id']).strip()
     except:
-        HG_REV = "???"
-    return HG_REV
+        hg_rev = "???"
+    return hg_rev
 
 
 def write_version_py(filename='jutil/version.py'):
@@ -61,56 +47,19 @@ def write_version_py(filename='jutil/version.py'):
         vfile.write(version_string)
 
 
-def get_package_version(package):
-    version = []
-    for version_attr in ('version', 'VERSION', '__version__'):
-        if (hasattr(package, version_attr) and
-                isinstance(getattr(package, version_attr), str)):
-            version_info = getattr(package, version_attr, '')
-            for part in re.split('\D+', version_info):
-                try:
-                    version.append(int(part))
-                except ValueError:
-                    pass
-    return tuple(version)
-
-
-def check_requirements():
-    if sys.version_info < PYTHON_VERSION:
-        raise SystemExit('You need Python version %d.%d or later.'
-                         % PYTHON_VERSION)
-
-    for package_name, min_version in DEPENDENCIES.items():
-        dep_error = False
-        try:
-            package = __import__(package_name)
-        except ImportError:
-            dep_error = True
-        else:
-            package_version = get_package_version(package)
-            if min_version > package_version:
-                dep_error = True
-
-        if dep_error:
-            raise ImportError('You need `%s` version %d.%d or later.'
-                              % ((package_name, ) + min_version))
-
-
 if __name__ == "__main__":
-    check_requirements()
-
     write_version_py()
 
     setup(
         name=DISTNAME,
         description=DESCRIPTION,
-        long_description=LONG_DESCRIPTION,
         maintainer=MAINTAINER,
         maintainer_email=MAINTAINER_EMAIL,
-        url=URL,
-        download_url=URL,
         version=VERSION,
         test_suite="nose.collector",
+        setup_requires=["numpy>=1.6",
+                        "nose"],
+        install_requires=["numpy>=1.6"],
 
         classifiers=[
             'Development Status :: 3 - alpha',
@@ -118,7 +67,6 @@ if __name__ == "__main__":
             'Intended Audience :: Developers',
             'Intended Audience :: Science/Research',
             'License :: OSI Approved :: BSD License',
-            'Programming Language :: C',
             'Programming Language :: Python',
             'Topic :: Scientific/Engineering',
             'Operating System :: Microsoft :: Windows',

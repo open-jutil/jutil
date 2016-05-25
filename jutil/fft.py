@@ -2,7 +2,6 @@
 # Copyright 2014 by Forschungszentrum Juelich GmbH
 # Author: J. Ungermann
 #
-
 import numpy as np
 import os
 import functools
@@ -57,7 +56,6 @@ def configure(module=None, threads=NTHREADS):
         irfftn = functools.partial(fftwmod.irfftn, threads=threads)
     else:
         raise ValueError("configure accepts only 'numpy' and 'fftw', not '{}'".format(module))
-
 
 def _fft(x):
     """
