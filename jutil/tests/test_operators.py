@@ -57,10 +57,10 @@ def test_function():
 
     assert_almost_equal(dut1.dot(x), A.dot(x))
 
-    def dummy((x1, x2)):
+    def dummy(x1, x2):
         return x1.T.dot(x2)
 
-    assert_raises(AttributeError, dummy, (dut1, x))
+    assert_raises(AttributeError, dummy, dut1, x)
 
 
 def test_stack():

@@ -8,3 +8,4 @@ syntax: glob
 .spyderproject
 .idea*
 build*
+version.py

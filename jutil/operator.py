@@ -240,7 +240,7 @@ class Function(object):
         self.dot = self._dot if a == 1 else self._dot_a
         if _adjoint is None:
             if FT is not None:
-                self.T = Function((m, n), FT, a=a, _adjoint=self)
+                self.T = Function(shape, FT, a=a, _adjoint=self)
         else:
             self.T = _adjoint
 

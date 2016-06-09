@@ -3,6 +3,8 @@
 # Author: J. Ungermann
 #
 
+from __future__ import print_function
+
 import scipy.sparse
 import numpy as np
 
@@ -122,9 +124,9 @@ def get_mass_stiff(mask):
 
     weights = {
             1: ([4. / 6., 1. / 6.], [2., -1.]),
-            2: ([4. / 9., 1. / 9., 1. / 36.], 
+            2: ([4. / 9., 1. / 9., 1. / 36.],
                 [8. / 3., -1. / 3., -1. / 3.]),
-            3: ([64. / 216., 16. / 216., 4. / 216., 1. / 216.], 
+            3: ([64. / 216., 16. / 216., 4. / 216., 1. / 216.],
                 [32. / 12., 0., -2. / 12., -1. / 12.]),
             }[len(shape)]
 
@@ -135,7 +137,7 @@ def get_mass_stiff(mask):
         idxn = [x.copy() for x in np.unravel_index(idx1, shape)]
         for axis, off in enumerate(neighbours):
             idxn[axis] += off
-        valid = logical_and([(0 <= idxn[axis]) & (idxn[axis] < shape[axis]) 
+        valid = logical_and([(0 <= idxn[axis]) & (idxn[axis] < shape[axis])
                              for axis in range(len(shape))])
         idx1 = idx1[valid]
         jdx1 = np.ravel_multi_index([x[valid] for x in idxn], shape)
@@ -171,9 +173,9 @@ def get_mass2(mask):
                 j = np.ravel_multi_index(idx, shape)
                 M[i, j] = 1 + kind
                 js.append(j)
-        print js
+        print(js)
     return M
-            
+
 
 def get_mass(shape):
     n = np.prod(shape)
