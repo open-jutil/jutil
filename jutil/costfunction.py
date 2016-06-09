@@ -207,6 +207,8 @@ class ScaledCostFunction(AbstractCostFunction):
             self.chisq_m = property(J.chisq_m)
         if hasattr(J, "chisq_a"):
             self.chisq_a = property(J.chisq_a)
+        if hasattr(J, "update_jacobian"):
+            self.update_jacobian = lambda x: self._J.update_jacobian(x)
 
     def init(self, x):
         self._J.init(self._D.dot(x))
