@@ -132,7 +132,7 @@ def test_ifft_adj():
 
 def test_rfft_adj():
     for n in NS:
-        m = n / 2 + 1
+        m = n // 2 + 1
 
         A = jdiff.fd_jac(wrap(jfft.rfft, None, False, True), np.zeros(n))
         B = jdiff.fd_jac(wrap(jfft.rfft_adj, None, True, False, {"n":n}), np.zeros(2 * m)).T
@@ -146,7 +146,7 @@ def test_rfft_adj():
 
 def test_irfft_adj():
     for n in NS:
-        m = n / 2 + 1
+        m = n // 2 + 1
 
         A = jdiff.fd_jac(wrap(jfft.irfft, m, True, False, {"n":n}), np.zeros(m * 2))
         B = jdiff.fd_jac(wrap(jfft.irfft_adj, None, False, True), np.zeros(n)).T
@@ -161,7 +161,7 @@ def test_irfft_adj():
 def test_rfft2_adj():
     for n1 in NS:
         for n2 in NS:
-            m = n2 / 2 + 1
+            m = n2 // 2 + 1
 
             A = jdiff.fd_jac(wrap(jfft.rfft2, (n1, n2), False, True), np.zeros(n1 * n2))
             B = jdiff.fd_jac(wrap(jfft.rfft2_adj, (n1, m), True, False, {"n":n2}),
@@ -177,7 +177,7 @@ def test_rfft2_adj():
 def test_irfft2_adj():
     for n1 in [2, 4, 10, 11, 16, 17, 21]:
         for n2 in [2, 4, 10, 11, 16, 17, 21]:
-            m = n2 / 2 + 1
+            m = n2 // 2 + 1
 
             A = jdiff.fd_jac(wrap(jfft.irfft2, (n1, m), True, False, {"s":(n1, n2)}),
                              np.zeros(n1 * m * 2))
