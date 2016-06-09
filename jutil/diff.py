@@ -100,7 +100,7 @@ def get_diff_operator(mask, axis, factor=1):
     val_indice = np.where(mask1.reshape(-1))[0]
     p1s = np.asarray([indmap[x] for x in val_indice])
     m1s = np.asarray([indmap[x] for x in val_indice - offset])
-    iis = val_indice - offset
+    iis = np.arange(len(m1s))
 
     cols = np.concatenate([m1s + k for k in ks] + [p1s + k for k in ks])
     rows = np.concatenate([iis + k for k in ks] * 2)
