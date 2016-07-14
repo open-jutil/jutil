@@ -7,6 +7,7 @@ import numpy as np
 import numpy.linalg as la
 import logging
 import jutil
+from tqdm import tqdm
 
 LOG = logging.getLogger(__name__)
 
@@ -38,7 +39,8 @@ def conj_grad_solve(A, b, P=None, x_0=None,
         determines the maximum number of iterations.
     abs_tol : float
         determines the tolerance for the remaining
-        residuum. The algorithm will terminate if :math:`||Ax - b||_2 / ||b||_2 < \mathrm{abs\_tol}`.
+        residuum. The algorithm will terminate if
+        :math:`||Ax - b||_2 / ||b||_2 < \mathrm{abs\_tol}`.
     rel_tol : float
         determines the expected residual reduction. The
         algorithm will terminate when :math:`||Ax_0 - b||_2 / ||Ax - b||_2 < \mathrm{rel_tol}`.
@@ -70,37 +72,38 @@ def conj_grad_solve(A, b, P=None, x_0=None,
     xs = [0 for _ in range(len(rel_tol))]
 
     i = 0
-    while i < max_iter:
-        norm = la.norm(r)
-        norm_div_norm_b = norm / norm_b
-        for j in range(len(rel_tol)):
-            if norm_div_norm_b < rel_tol[j]:
-                xs[j] = x.copy()
-                if j > 0:
-                    rel_tol[j] = -1
+    with tqdm(total=max_iter) as pbar:
+        while i < max_iter:
+            norm = la.norm(r)
+            norm_div_norm_b = norm / norm_b
+            for j in range(len(rel_tol)):
+                if norm_div_norm_b < rel_tol[j]:
+                    xs[j] = x.copy()
+                    if j > 0:
+                        rel_tol[j] = -1
+            pbar.update()
+            if (norm <= abs_tol) or (norm_div_norm_b < rel_tol[0]):
+                break
+            LOG.debug("CG, it={}, reduced to {} {}".format(
+                i, norm, norm / norm_b, norm_b))
 
-        if (norm <= abs_tol) or (norm_div_norm_b < rel_tol[0]):
-            break
-        LOG.debug("CG, it={}, reduced to {} {}".format(
-            i, norm, norm / norm_b, norm_b))
+            v = A.dot(p)
+            pAp = np.dot(v, p)
+            if pAp <= 0:  # negative curvature
+                LOG.warn("CG encountered negative curvature. Is matrix really s.p.d.?")
+                break
+            lambd = alpha / pAp
+            assert not np.isnan(lambd)
 
-        v = A.dot(p)
-        pAp = np.dot(v, p)
-        if pAp <= 0:  # negative curvature
-            LOG.warn("CG encountered negative curvature. Is matrix really s.p.d.?")
-            break
-        lambd = alpha / pAp
-        assert not np.isnan(lambd)
+            x += lambd * p
+            i += 1
+            r -= lambd * v
+            z = P.dot(r)
+            new_alpha = np.dot(r, z)
+            p *= new_alpha / alpha
+            p += z
 
-        x += lambd * p
-        i += 1
-        r -= lambd * v
-        z = P.dot(r)
-        new_alpha = np.dot(r, z)
-        p *= new_alpha / alpha
-        p += z
-
-        alpha = new_alpha
+            alpha = new_alpha
 
     LOG.info("CG needed {}{} iterations to reduce to {} {}".format(
         ("max=" if (i == max_iter) else ""), i, la.norm(r),
