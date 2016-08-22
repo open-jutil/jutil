@@ -99,15 +99,12 @@ class LeastSquaresCostFunction(AbstractCostFunction):
 
     def init(self, x):
         self.__call__(x)
-        self.update_jacobian(x)
-
-    def update_jacobian(self, x):
-        self._jac = self._func_jac(x)
 
     def _update(self, x):
         if self._x is None or np.any(self._x != x):
-            self._y = self._func(x)
             self._x = x.copy()
+            self._y = self._func(x)
+            self._jac = self._func_jac(x)
 
     def __call__(self, x):
         self._update(x)
