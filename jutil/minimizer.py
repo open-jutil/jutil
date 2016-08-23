@@ -28,7 +28,7 @@ def get_chi_square_probability(chisq, N):
 
 
 def _print_info(log, it, J, disq, normb):
-    chisq_str, disq_str, q_str = "", "", ""
+    chisq_str, disq_str, qstr = "", "", ""
     if hasattr(J, "chisq_m") and hasattr(J, "chisq_a") and J.chisq_m is not None and J.chisq_a is not None:
         chisq_str = "(meas= {chisqm} / apr= {chisqa} )".format(chisqm=J.chisq_m, chisqa=J.chisq_a)
     if disq and not np.isnan(disq):
@@ -167,7 +167,7 @@ class Minimizer(object):
             it += 1
 
             chisq = J.chisq
-            assert chisq <= chisq_old, chisq_old - chisq
+            assert chisq <= chisq_old, (chisq, chisq_old, chisq_old - chisq)
 
             # normalize step size in state space
             disq = np.dot(x_step, b) / J.n
@@ -367,15 +367,11 @@ class TrustRegionTruncatedCGQuasiNewtonStepper(object):
             CostFunctionOperator(J, x_i), b,
             P=CostFunctionPreconditioner(J, x_i),
             max_iter=self._cg_max_iter, rel_tol=err_rels, abs_tol=0, verbose=True)
-        for i, x_step in enumerate(x_steps):
+
+        delta_chisq_preds = [- np.dot(b, x_step) + 0.5 * np.dot(x_step, J.hess_dot(x_i, x_step)) for x_step in x_steps]
+        for i, (x_step, delta_chisq_pred) in enumerate(zip(x_steps, delta_chisq_preds)):
             x_new = x_i + x_step
             chisq = J(x_new)
-            delta_chisq = chisq - chisq_old
-            delta_chisq_pred = - np.dot(b, x_step) + 0.5 * np.dot(x_step, J.hess_dot(x_i, x_step))
-            if delta_chisq != 0:
-                chisq_factor = delta_chisq_pred / delta_chisq
-            else:
-                chisq_factor = np.Inf
 
             self._log.info("  try {} with err_rel= {} , new chisq= {} , old chisq= {}".format(
                 i, err_rels[i], chisq, chisq_old))
