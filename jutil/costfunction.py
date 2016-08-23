@@ -8,7 +8,7 @@ import numpy as np
 import jutil.norms
 import jutil.linalg
 import jutil.diff
-
+import logging
 
 class AbstractCostFunction(object):
     """
@@ -80,6 +80,8 @@ class LeastSquaresCostFunction(AbstractCostFunction):
         number of measurements if applicable
     jac : callable, optional
         function returning the jacobian of func, returns an array_like
+    func_returns_both: bool, optional
+        indicates that func returns a tuple of function value and jacobian
     hess : callable, optional
         function returning the hessian of func, returns a 2-D array_like
     hess_dot : callable, optional
@@ -87,14 +89,17 @@ class LeastSquaresCostFunction(AbstractCostFunction):
     epsilon : float, optional
     """
     def __init__(self, func, n, m=1, norm=jutil.norms.L2Square(),
-                 jac=None, epsilon=1e-6):
+                 jac=None, func_returns_both=False, epsilon=1e-6):
         self._func, self._func_jac = func, jac
+        self._func_returns_both = func_returns_both
         self._norm = norm
         self._epsilon = epsilon
         self.m, self.n = m, n
         self._x, self.chisq = None, None
 
-        if self._func_jac is None:
+        assert self._func_jac is None or not func_returns_both
+
+        if self._func_jac is None and not func_returns_both:
             self._func_jac = lambda x: jutil.diff.fd_jac(self._func, x, epsilon=self._epsilon)
 
     def init(self, x):
@@ -103,12 +108,15 @@ class LeastSquaresCostFunction(AbstractCostFunction):
     def _update(self, x):
         if self._x is None or np.any(self._x != x):
             self._x = x.copy()
-            self._y = self._func(x)
-            self._jac = self._func_jac(x)
+            if self._func_returns_both:
+                self._y, self._jac = self._func(x)
+            else:
+                self._y = self._func(x)
+                self._jac = self._func_jac(x)
+            self.chisq = self._norm(self._y)
 
     def __call__(self, x):
         self._update(x)
-        self.chisq = self._norm(self._y)
         return self.chisq
 
     def jac(self, x):
