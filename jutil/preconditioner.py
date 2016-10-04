@@ -7,9 +7,9 @@ import numpy as np
 
 
 def _safe_inverse(vec):
-    nonzero = (vec != 0)
     result = np.array(vec, copy=True)
-    result[nonzero] = 1. / vec[nonzero]
+    nonzero = (result != 0)
+    result[nonzero] = 1. / result[nonzero]
     return result
 
 
