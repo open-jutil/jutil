@@ -108,10 +108,7 @@ def conj_grad_solve(A, b, P=None, x_0=None,
 
     for j in [_j for _j in range(len(rel_tol)) if rel_tol[_j] != -1]:
         xs[j] = x.copy()
-    if len(xs) == 1:
-        return xs[0]
-    else:
-        return xs
+    return xs
 
 
 def conj_grad_tall_solve(A, bs, P=None, x_0=None,

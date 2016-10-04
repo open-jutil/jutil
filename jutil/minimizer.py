@@ -372,14 +372,13 @@ class TrustRegionTruncatedCGQuasiNewtonStepper(object):
         for i, (x_step, delta_chisq_pred) in enumerate(zip(x_steps, delta_chisq_preds)):
             x_new = x_i + x_step
             chisq = J(x_new)
-            slope = -np.dot(b, x_step) * 0.05
+            min_reduction = delta_chisq_pred * 0.1  # require 10% of predicted reduction
 
-            self._log.info("  try {} with err_rel= {} , new chisq= {} , old chisq= {}".format(
-                i, err_rels[i], chisq, chisq_old))
-            if chisq > chisq_old + slope and i + 1 < len(x_steps):
+            self._log.info("  try {} with err_rel= {} , new chisq= {} , old chisq= {}, pred. chisq= {}".format(
+                i, err_rels[i], chisq, chisq_old, chisq_old + delta_chisq_pred))
+            if chisq > chisq_old + min_reduction and i + 1 < len(x_steps):
                 continue
-
-            if chisq > chisq_old + slope and i + 1 == len(x_steps):
+            if chisq > chisq_old + min_reduction and i + 1 == len(x_steps):
                 self._log.info("  CG steps exhausted. Employing line search.")
                 _, chisq, x_new = lnsrch(x_i, chisq_old, -b, x_step, J)
                 x_step = x_new - x_i
@@ -400,7 +399,7 @@ class TrustRegionTruncatedCGQuasiNewton2Stepper(object):
         self._conv_rel = self._conv_rel_init
         self._factor = factor
         self._cg_max_iter = cg_max_iter
-        self._log = logging.getLogger(__name__ + ".TrustRegionTruncatedCGQuasiNewton")
+        self._log = logging.getLogger(__name__ + ".TrustRegionTruncatedCGQuasiNewton2")
 
     def _get_err_rels(self):
         result = [self._conv_rel]
@@ -419,33 +418,37 @@ class TrustRegionTruncatedCGQuasiNewton2Stepper(object):
             CostFunctionOperator(J, x_i), b,
             P=CostFunctionPreconditioner(J, x_i),
             max_iter=self._cg_max_iter, rel_tol=err_rels, abs_tol=0, verbose=True)
-        for i, x_step in enumerate(x_steps):
+
+        delta_chisq_preds = [- np.dot(b, x_step) + 0.5 * np.dot(x_step, J.hess_dot(x_i, x_step)) for x_step in x_steps]
+        last_step = None
+        for i, (x_step, delta_chisq_pred) in enumerate(zip(x_steps, delta_chisq_preds)):
+            if last_step is not None and np.all(last_step == x_step):
+                continue
             self._conv_rel = err_rels[i]
 
             x_new = x_i + x_step
-            delta_chisq_pred = - np.dot(b, x_step) + 0.5 * np.dot(x_step, J.hess_dot(x_i, x_step))
+            chisq_pred = chisq_old + delta_chisq_pred
             chisq = J(x_new)
-            delta_chisq = chisq - chisq_old
-            if delta_chisq != 0:
-                chisq_factor = delta_chisq_pred / delta_chisq
-            else:
-                chisq_factor = np.Inf
+            chisq_factor = chisq_pred / chisq
 
-            self._log.debug("  try {} with err_rel= {} , new chisq= {} , old chisq= {}, chisq_factor= {}".format(
-                i, err_rels[i], chisq, chisq_old, chisq_factor))
+            self._log.info("  try {} with err_rel= {} , new chisq= {} , old chisq= {}, chisq_pred= {}, chisq_factor= {}".format(
+                i, err_rels[i], chisq, chisq_old, chisq_pred, chisq_factor))
 
-            if chisq_factor < 0.25:
-                self._conv_rel = min(1.0, self._conv_rel * self._factor)
-            else:
+            if chisq < chisq_old + 0.2 * delta_chisq_pred:
+                self._conv_rel = err_rels[i]
+                if chisq_factor < 0.25:
+                    self._conv_rel *= self._factor
                 if chisq_factor > 0.5:
                     self._conv_rel /= self._factor
-            if delta_chisq <= 0:
+                self._log.info("  Setting reltol to {} ({}<{})".format(self._conv_rel, chisq, chisq_old))
                 return x_step
+
+            last_step = x_step
 
         self._log.info("  CG steps exhausted. Employing line search.")
         _, chisq, x_new = lnsrch(x_i, chisq_old, -b, x_steps[-1], J)
         x_step = x_new - x_i
-        self._conv_rel = 1
+        self._conv_rel = 1. / self._factor
 
         self._log.info("  Setting reltol to {} ({}<{})".format(self._conv_rel, chisq, chisq_old))
         return x_step
