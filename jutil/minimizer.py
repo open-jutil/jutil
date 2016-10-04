@@ -30,7 +30,7 @@ def get_chi_square_probability(chisq, N):
 def _print_info(log, it, J, disq, normb):
     chisq_str, disq_str, qstr = "", "", ""
     if hasattr(J, "chisq_m") and hasattr(J, "chisq_a") and J.chisq_m is not None and J.chisq_a is not None:
-        chisq_str = "(meas= {chisqm} / apr= {chisqa} )".format(chisqm=J.chisq_m, chisqa=J.chisq_a)
+        chisq_str = " (meas= {chisqm} / apr= {chisqa} )".format(chisqm=J.chisq_m, chisqa=J.chisq_a)
     if disq and not np.isnan(disq):
         disq_str = " / d_i^2/n= {disq}".format(disq=disq)
     if hasattr(J, "m"):
@@ -147,7 +147,7 @@ class Minimizer(object):
         chisq = J.chisq
         converged = {}
         while True:
-            if hasattr(J, "update_jacobian"):
+            if hasattr(J, "update_jacobian") and it > 0:
                 J.update_jacobian(x_i)
 
             b = -J.jac(x_i)
@@ -372,13 +372,14 @@ class TrustRegionTruncatedCGQuasiNewtonStepper(object):
         for i, (x_step, delta_chisq_pred) in enumerate(zip(x_steps, delta_chisq_preds)):
             x_new = x_i + x_step
             chisq = J(x_new)
+            slope = -np.dot(b, x_step) * 0.05
 
             self._log.info("  try {} with err_rel= {} , new chisq= {} , old chisq= {}".format(
                 i, err_rels[i], chisq, chisq_old))
-            if chisq > chisq_old and i + 1 < len(x_steps):
+            if chisq > chisq_old + slope and i + 1 < len(x_steps):
                 continue
 
-            if chisq > chisq_old and i + 1 == len(x_steps):
+            if chisq > chisq_old + slope and i + 1 == len(x_steps):
                 self._log.info("  CG steps exhausted. Employing line search.")
                 _, chisq, x_new = lnsrch(x_i, chisq_old, -b, x_step, J)
                 x_step = x_new - x_i
