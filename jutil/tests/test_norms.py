@@ -1,22 +1,11 @@
 import numpy as np
 import scipy.sparse as sp
 from jutil.norms import *
+from jutil.diff import fd_jac
 from numpy.testing import assert_almost_equal
 
-h = 1e-6
 
-
-def fd_jac(norm, x):
-    return np.asarray([(norm(x + h * np.eye(len(x))[:, i]) - norm(x)) / h
-                       for i in range(len(x))])
-
-
-def fd_hess(norm, x):
-    return np.asarray([(norm.jac(x + h * np.eye(len(x))[:, i]) - norm.jac(x)) / h
-                       for i in range(len(x))])
-
-
-def hess(norm, x):
+def hess_by_hess_dot(norm, x):
     return np.asarray([norm.hess_dot(x, np.eye(len(x))[:, i])
                        for i in range(len(x))])
 
@@ -24,8 +13,9 @@ def hess(norm, x):
 def execute_norm(norm):
     x = np.arange(1., 6.)[::-1]
     assert_almost_equal(fd_jac(norm, x), norm.jac(x), decimal=5)
-    assert_almost_equal(fd_hess(norm, x), hess(norm, x), decimal=5)
-    assert_almost_equal(np.diag(hess(norm, x)), norm.hess_diag(x), decimal=5)
+    assert_almost_equal(fd_jac(norm.jac, x), norm.hess(x), decimal=5)
+    assert_almost_equal(norm.hess(x), hess_by_hess_dot(norm, x), decimal=5)
+    assert_almost_equal(np.diag(norm.hess(x)), norm.hess_diag(x), decimal=5)
 
 
 def test_tv():
@@ -40,7 +30,7 @@ def test_tv():
     x = 1 + np.arange(4.)
 
     assert_almost_equal(fd_jac(norm, x), norm.jac(x))
-    assert_almost_equal(fd_hess(norm, x), hess(norm, x))
+    assert_almost_equal(fd_jac(norm.jac, x), hess_by_hess_dot(norm, x))
 
     S1 = np.zeros((4, 4))
     for i in range(4):

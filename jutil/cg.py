@@ -47,6 +47,8 @@ def conj_grad_solve(A, b, P=None, x_0=None,
 
     """
 
+    single_result = not hasattr(rel_tol, "__len__")
+
     rel_tol = np.array(rel_tol, copy=True).reshape(-1)
     assert len(rel_tol) > 0
     assert np.all(np.diff(rel_tol) > 0)
@@ -108,6 +110,11 @@ def conj_grad_solve(A, b, P=None, x_0=None,
 
     for j in [_j for _j in range(len(rel_tol)) if rel_tol[_j] != -1]:
         xs[j] = x.copy()
+
+    if single_result:
+        assert len(xs) == 1
+        xs = xs[0]
+
     return xs
 
 
