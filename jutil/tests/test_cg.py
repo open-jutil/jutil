@@ -1,11 +1,10 @@
 import numpy as np
 from numpy.testing import assert_almost_equal
-from jutil.cg import *
-from jutil.preconditioner import *
+from jutil.cg import conj_grad_solve, conj_grad_tall_solve
+from jutil.preconditioner import JacobiPreconditioner
 
 
 def test_cg():
-    import jutil.operator
     n, m = 7, 4
     A = np.random.rand(n, n)
     A = A.T.dot(A)

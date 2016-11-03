@@ -1,8 +1,10 @@
 import numpy as np
-from numpy.testing import assert_equal, assert_almost_equal
+from numpy.testing import assert_almost_equal
 import jutil.fft as jfft
 import numpy.fft as npfft
 import jutil.diff as jdiff
+
+
 NS = [2, 3, 4, 5, 10, 11, 16, 17, 21]
 
 

@@ -173,7 +173,6 @@ def get_mass2(mask):
                 j = np.ravel_multi_index(idx, shape)
                 M[i, j] = 1 + kind
                 js.append(j)
-        print(js)
     return M
 
 

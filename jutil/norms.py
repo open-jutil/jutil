@@ -300,7 +300,10 @@ class WeightedNorm(object):
         temp1 = self._weight.dot(x)
         base_hess = self._base.hess(temp1)
         temp2 = self._weight.T.dot(base_hess)
-        return temp2.dot(self._weight)
+        print self._weight, temp2
+        print type(temp2), type(self._weight)
+        print temp2.shape, self._weight.shape
+        return (self._weight.T.dot(temp2.T)).T
 
     def hess_dot(self, x, vec):
         w_dot_vec = self._weight.dot(vec)
@@ -332,7 +335,10 @@ class WeightedL2Square(object):
         return 2 * self._weight.T.dot(self._weight.dot(x))
 
     def hess(self, _):
-        return 2 * self._weight.T.dot(self._weight)
+        result = 2 * self._weight.T.dot(self._weight)
+        if hasattr(result, "todense"):
+            result = result.todense()
+        return result
 
     def hess_dot(self, _, vec):
         return 2 * self._weight.T.dot(self._weight.dot(vec))
