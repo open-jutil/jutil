@@ -90,7 +90,7 @@ def _rfft(x):
     Implemented here for reference of numpy behaviour. Do not use!.
     """
     n = len(x)
-    result = np.zeros(n / 2 + 1, dtype=np.complex)
+    result = np.zeros(n // 2 + 1, dtype=np.complex)
     for m in range(len(result)):
         result[m] = (x * np.exp(-np.pi * 2j * np.arange(n) * m / n)).sum()
     return result
@@ -211,7 +211,7 @@ def irfft_adj(x):
     -------
     array_like
     """
-    n_out = len(x) / 2 + 1
+    n_out = len(x) // 2 + 1
     xp = fft(x) / len(x)
     if len(x) % 2 == 0:
         xp[1:n_out - 1] += np.conj(xp[:n_out - 1:-1])
@@ -256,7 +256,7 @@ def irfft2_adj(x):
     -------
     array_like
     """
-    n_out = x.shape[1] / 2 + 1
+    n_out = x.shape[1] // 2 + 1
     xp = fft(x, axis=1) / x.shape[1]
     if x.shape[1] % 2 == 0:
         xp[:, 1:n_out - 1] += np.conj(xp[:, :n_out - 1:-1])
