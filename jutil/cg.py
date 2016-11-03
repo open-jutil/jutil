@@ -67,6 +67,9 @@ def conj_grad_solve(A, b, P=None, x_0=None,
 
     r = b - A.dot(x)
     p = P.dot(r)
+    v = np.empty_like(r)
+    z = np.empty_like(p)
+
     alpha = np.dot(r, p)
     norm_b = la.norm(b)
     xs = [0 for _ in range(len(rel_tol))]
@@ -86,7 +89,7 @@ def conj_grad_solve(A, b, P=None, x_0=None,
         LOG.debug("CG, it={}, reduced to {} {}".format(
             i, norm, norm / norm_b, norm_b))
 
-        v = A.dot(p)
+        v[:] = A.dot(p)
         pAp = np.dot(v, p)
         if pAp <= 0:  # negative curvature
             LOG.warn("CG encountered negative curvature. Is matrix really s.p.d.?")
@@ -97,7 +100,7 @@ def conj_grad_solve(A, b, P=None, x_0=None,
         x += lambd * p
         i += 1
         r -= lambd * v
-        z = P.dot(r)
+        z[:] = P.dot(r)
         new_alpha = np.dot(r, z)
         p *= new_alpha / alpha
         p += z

@@ -358,6 +358,8 @@ class TruncatedCGTrustRegionStepper(object):
 
     def _get_err_rels(self):
         result = [self._conv_rel]
+        if self._conv_rel == 0:
+            raise ValueError("relative convergence set to 0! Choose a positive value.")
         while result[-1] < 1:
             result.append(min(result[-1] * self._factor, 1.0))
         return result
@@ -410,6 +412,8 @@ class TruncatedCGTrustRegionStepper2(object):
 
     def _get_err_rels(self):
         result = [self._conv_rel]
+        if self._conv_rel == 0:
+            raise ValueError("relative convergence set to 0! Choose a positive value.")
         while result[-1] < 1:
             result.append(min(result[-1] * self._factor, 1.0))
         return result
