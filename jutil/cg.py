@@ -77,7 +77,7 @@ def conj_grad_solve(A, b, P=None, x_0=None,
     xs = [0 for _ in range(len(rel_tol))]
 
     i = 0
-    with tqdm(total=max_iter) as pbar:
+    with tqdm(total=max_iter, leave=True, disable=not verbose) as pbar:
         while i < max_iter:
             norm = la.norm(r)
             norm_div_norm_b = norm / norm_b

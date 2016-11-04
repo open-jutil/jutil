@@ -349,11 +349,12 @@ class TruncatedCGTrustRegionStepper(object):
     """
     todo newton requires dampening (p - 1) for l_p normed cost functions?
     """
-    def __init__(self, conv_rel=1e-4, factor=10, cg_max_iter=-1):
+    def __init__(self, conv_rel=1e-4, factor=10, cg_max_iter=-1, verbose=False):
         self._conv_rel_init = conv_rel
         self._conv_rel = self._conv_rel_init
         self._factor = factor
         self._cg_max_iter = cg_max_iter
+        self._verbose = verbose
         self._log = logging.getLogger(__name__ + ".TruncatedCGTrustRegionStepper")
 
     def _get_err_rels(self):
@@ -373,7 +374,7 @@ class TruncatedCGTrustRegionStepper(object):
         x_steps = cg.conj_grad_solve(
             CostFunctionOperator(J, x_i), b,
             P=CostFunctionPreconditioner(J, x_i),
-            max_iter=self._cg_max_iter, rel_tol=err_rels, abs_tol=0, verbose=True)
+            max_iter=self._cg_max_iter, rel_tol=err_rels, abs_tol=0, verbose=self._verbose)
 
         delta_chisq_preds = [- np.dot(b, x_step) + 0.5 * np.dot(x_step, J.hess_dot(x_i, x_step)) for x_step in x_steps]
         for i, (x_step, delta_chisq_pred) in enumerate(zip(x_steps, delta_chisq_preds)):
@@ -403,11 +404,12 @@ class TruncatedCGTrustRegionStepper2(object):
     """
     todo newton requires dampening (p - 1) for l_p normed cost functions?
     """
-    def __init__(self, conv_rel=1e-4, factor=10, cg_max_iter=-1):
+    def __init__(self, conv_rel=1e-4, factor=10, cg_max_iter=-1, verbose=False):
         self._conv_rel_init = conv_rel
         self._conv_rel = self._conv_rel_init
         self._factor = factor
         self._cg_max_iter = cg_max_iter
+        self._verbose = verbose
         self._log = logging.getLogger(__name__ + ".TruncatedCGTrustRegion2Stepper")
 
     def _get_err_rels(self):
@@ -428,7 +430,7 @@ class TruncatedCGTrustRegionStepper2(object):
         x_steps = cg.conj_grad_solve(
             CostFunctionOperator(J, x_i), b,
             P=CostFunctionPreconditioner(J, x_i),
-            max_iter=self._cg_max_iter, rel_tol=err_rels, abs_tol=0, verbose=True)
+            max_iter=self._cg_max_iter, rel_tol=err_rels, abs_tol=0, verbose=self._verbose)
 
         delta_chisq_preds = [- np.dot(b, x_step) + 0.5 * np.dot(x_step, J.hess_dot(x_i, x_step)) for x_step in x_steps]
         last_step = None
