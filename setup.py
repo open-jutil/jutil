@@ -32,7 +32,7 @@ def configuration(parent_package='', top_path=None):
 
 def hg_version():
     try:
-        hg_rev = subprocess.check_output(['hg', 'id', '--id']).strip()
+        hg_rev = subprocess.check_output(['git', 'rev-parse', 'HEAD']).strip()
     except:
         hg_rev = "???"
     return hg_rev
@@ -59,7 +59,7 @@ if __name__ == "__main__":
         test_suite="nose.collector",
         setup_requires=["numpy>=1.6",
                         "nose"],
-        install_requires=["numpy>=1.6"],
+        install_requires=["numpy>=1.6", "tqdm", "scipy"],
 
         classifiers=[
             'Development Status :: 3 - alpha',
