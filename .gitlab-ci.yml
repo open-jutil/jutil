@@ -2,7 +2,7 @@ image: "python:3.5"
 
 before_script:
   - python --version
-  - pip install tqdm cmocean numpy scipy nose
+  - pip install tqdm cmocean numpy scipy pytest pytest-flake8
 
 stages:
   - test
@@ -10,6 +10,6 @@ stages:
 test:
   stage: test
   script:
-    - python setup.py test
+    - py.test --flake8
 
 
