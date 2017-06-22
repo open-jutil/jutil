@@ -1,7 +1,7 @@
 from __future__ import print_function
 
-import matplotlib
-matplotlib.use('Agg')
+# import matplotlib
+# matplotlib.use('Agg')
 import jutil.minimizer as minimizer
 import numpy as np
 import numpy.linalg as la
@@ -37,9 +37,11 @@ class CostFunction(object):
     @property
     def chisq(self):
         return self._chisq
+
     @property
     def chisq_m(self):
         return self._chisqm
+
     @property
     def chisq_a(self):
         return self._chisqa
@@ -63,7 +65,6 @@ class CostFunctionImage(object):
                 S[self.n + i, i] = -1
                 S[self.n + i, i + 256] = 1
         self._Sa_inv = S.tocsr()
-        print(dir(norms))
         self._norm = norms.WeightedTVNorm(norms.NormLPPow(p, 1e-5), self._Sa_inv, [self.n, 2 * self.n])
 
     def init(self, x_i):
@@ -72,7 +73,7 @@ class CostFunctionImage(object):
     def __call__(self, x):
         dy = x - self._y
         self._chisqm = np.dot(dy, dy) / self.m
-        self._chisqa = self._lambda * self._norm(x)/ self.m
+        self._chisqa = self._lambda * self._norm(x) / self.m
         self._chisq = self._chisqm + self._chisqa
         return self._chisq
 
@@ -85,9 +86,11 @@ class CostFunctionImage(object):
     @property
     def chisq(self):
         return self._chisq
+
     @property
     def chisq_m(self):
         return self._chisqm
+
     @property
     def chisq_a(self):
         return self._chisqa
@@ -108,14 +111,14 @@ class CostFunctionSquares(CostFunctionImage):
         self._y_t[100:200, 100:200] = 255.
         self._y_t[50:150, 50:150] = 200.
         self._y_t[55:145, 55:145] = 0.
-        for i, j in [(i,j) for i in range(-25, 25) for j in range(-25, 25)]:
+        for i, j in [(i, j) for i in range(-25, 25) for j in range(-25, 25)]:
             if abs(i) + abs(j) < 25:
                 self._y_t[50 + i, 50 + j] = 150
-        for i, j in [(i,j) for i in range(-25, 25) for j in range(-25, 25)]:
+        for i, j in [(i, j) for i in range(-25, 25) for j in range(-25, 25)]:
             if np.hypot(i, j) < 25:
                 self._y_t[200 + i, 50 + j] = 60
             if np.hypot(i, j) < 10:
-                 self._y_t[50 + i, 200 + j] = 200
+                self._y_t[50 + i, 200 + j] = 200
         self._y_t = self._y_t.reshape(-1)
         super(CostFunctionSquares, self).__init__(p, lam)
 
@@ -175,7 +178,7 @@ def split_bregman_2d_test(image_t, image, ig=None, weight=100, max_iter=300, mu=
         for k in range(0, 256, 4):
             delta = (k - j) / 256.
             cols = j + np.asarray(map(int, np.arange(256) * delta))
-            assert min(cols) >= 0 and max(cols) <= 255, (k,j, delta, cols)
+            assert min(cols) >= 0 and max(cols) <= 255, (k, J, delta, cols)
             rows = np.arange(256)
             A[i, rows * 256 + cols] = 1
             i += 1
@@ -191,7 +194,7 @@ def split_bregman_2d_test(image_t, image, ig=None, weight=100, max_iter=300, mu=
     ATA_DTD = op.Plus(op.Dot(A.T, A), op.Dot(D.T, D))
 
     x = cg.conj_grad_solve(ATA_DTD, A.T.dot(image), max_iter=300, abs_tol=1e-40, rel_tol=1e-40, verbose=True)
-    print(la.norm(x-image_t))
+    print(la.norm(x - IMage_t))
 
     b = np.zeros(2 * n)
     d = b
@@ -205,8 +208,8 @@ def split_bregman_2d_test(image_t, image, ig=None, weight=100, max_iter=300, mu=
         chisq_a = weight * sum(np.hypot(*np.split(D.dot(xx), 2))) / len(image)
         chisq = chisq_m + chisq_a
         print("it= {it} / chi^2/m= {chisq} (meas= {chisqm} / apr= {chisqa} ) / {err}".format(
-               it=it, chisq=chisq, chisqm=chisq_m,
-               chisqa=chisq_a, err=error))
+              it=it, chisq=chisq, chisqm=chisq_m,
+              chisqa=chisq_a, err=error))
 
     it, error = 0, 0
     printInfo(x)
@@ -233,7 +236,7 @@ def split_bregman_2d_test(image_t, image, ig=None, weight=100, max_iter=300, mu=
             temp = np.maximum(s - weight / lambd, 0)
             d = (temp * D_dot_u_plus_b.reshape(2, -1) / s_prime).reshape(-1)
 
-        else: # anisotropic
+        else:  # anisotropic
             temp = np.maximum(np.abs(D_dot_u_plus_b) - weight / lambd, 0)
             d = temp * np.sign(D_dot_u_plus_b)
         b = D_dot_u_plus_b - d
@@ -291,8 +294,8 @@ def split_bregman_2d(image, ig=None, weight=50, max_iter=400, mu=5, lambd=1, tol
         chisq_a = weight * sum(np.hypot(*np.split(D.dot(u), 2))) / len(u)
         chisq = chisq_m + chisq_a
         print("it= {it} / chi^2/m= {chisq} (meas= {chisqm} / apr= {chisqa} ) / {err}".format(
-               it=it, chisq=chisq, chisqm=chisq_m,
-               chisqa=chisq_a, err=error))
+              it=it, chisq=chisq, chisqm=chisq_m,
+              chisqa=chisq_a, err=error))
 
     it, error = 0, 0
     printInfo()
@@ -316,7 +319,7 @@ def split_bregman_2d(image, ig=None, weight=50, max_iter=400, mu=5, lambd=1, tol
             temp = np.maximum(s - weight / lambd, 0)
             d = (temp * D_dot_u_plus_b.reshape(2, -1) / s_prime).reshape(-1)
 
-        else: # anisotropic
+        else:  # anisotropic
             temp = np.maximum(np.abs(D_dot_u_plus_b) - weight / lambd, 0)
             d = temp * np.sign(D_dot_u_plus_b)
         b = D_dot_u_plus_b - d
@@ -337,7 +340,7 @@ def tv_denoise_2d(image, weight=50, eps=2.e-4, keep_type=False):
     i = 0
     while i < n_max_iter:
         print(i)
-        d = -px -py
+        d = - px - py
         d[1:] += px[:-1]
         d[:, 1:] += py[:, :-1]
 
@@ -349,9 +352,9 @@ def tv_denoise_2d(image, weight=50, eps=2.e-4, keep_type=False):
         E += weight * norm.sum()
         norm *= 0.5 / weight
         norm += 1
-        px -= 0.25*gx
+        px -= 0.25 * gx
         px /= norm
-        py -= 0.25*gy
+        py -= 0.25 * gy
         py /= norm
         E /= float(image.size)
         if i == 0:

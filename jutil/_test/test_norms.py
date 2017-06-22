@@ -1,6 +1,5 @@
 import numpy as np
 import scipy.sparse as sp
-import jutil
 from jutil.norms import LPPow, L1, L2Square, WeightedNorm, \
     Huber, Ekblom, BiSquared, WeightedL2Square, WeightedTVNorm
 from jutil.diff import fd_jac
