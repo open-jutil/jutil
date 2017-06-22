@@ -144,33 +144,8 @@ def split_bregman_2d_test(image_t, image, ig=None, weight=100, max_iter=300, mu=
             DiffOp[n + i, i + n_root] = 1
     D = DiffOp.tocsr()
 
-    """
-    A = scipy.sparse.lil_matrix((5000, n))
-    for i in range(A.shape[0]):
-        if i % 100 == 0:
-            print i
-        A[i, np.random.randint(n, size=30)] = 1
-    """
     A = scipy.sparse.lil_matrix((2 * 256 * 256 / 8, n))
     test = np.zeros((256, 256))
-    """
-    for i in range(256):
-        print i
-        test[:, i] = 1
-        test = test.reshape(-1)
-        for j in np.where(test == 1):
-            A[i, j] = 1
-        test = test.reshape(256, 256)
-        test[:, i] = 0
-    for i in range(256):
-        test[i, :] = 1
-        test = test.reshape(-1)
-        for j in np.where(test == 1):
-            A[i + 256, j] = 1
-        test = test.reshape(256, 256)
-        test[i, :] = 0
-    i = 512
-    """
     i = 0
     for j in range(0, 256, 2):
         print(i)
@@ -374,22 +349,6 @@ def dummy_test(Type, name, l1, l2):
     J2._y = J11._y
     with TakeTime("bregman"):
         den = split_bregman_2d_test(J2._y_t, J2._y.reshape(256, 256), weight=200).reshape(-1)
-    print("""
-#
-    optimize2 = minimizer.Minimizer(minimizer.GaussNewtonStepper())
-    optimize2.conv_min_costfunction_gradient = 1e-5 / J2.m
-    optimize2.conv_max_iteration = 10
-    with TakeTime("l2"):
-        solution2 = optimize2(J2, J2._y)
-    print
-    optimize1 = minimizer.Minimizer(minimizer.ScaledSteepestDescentStepper())
-    optimize1.conv_min_costfunction_gradient = 1e-5 / J2.m
-    optimize1.conv_max_iteration = 10
-    with TakeTime("l101"):
-        solution11 = optimize1(J11, J11._y)
-#    solution11 = split_bregman_2d(J2._y.reshape(256, 256), weight=400).reshape(-1)
-    print
-    """)
     solution11 = den
     solution2 = den
     img_map = pylab.cm.gray

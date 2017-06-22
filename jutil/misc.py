@@ -12,7 +12,7 @@ def get_lena_256():
     Returns the center of the lena image.
     """
     import scipy.misc
-    return scipy.misc.lena()[384:128:-1, 128:384]
+    return scipy.misc.ascent()[384:128:-1, 128:384]
 
 
 def get_phantom_1():
