@@ -57,6 +57,7 @@ def configure(module=None, threads=NTHREADS):
     else:
         raise ValueError("configure accepts only 'numpy' and 'fftw', not '{}'".format(module))
 
+
 def _fft(x):
     """
     Fast Fourier Transform.

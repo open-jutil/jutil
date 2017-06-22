@@ -5,7 +5,7 @@ import numpy as np
 
 
 Boltzmann_Constant = 1.3806488e-23
-First_Radiation_Constant  = 1.191042869e-8
+First_Radiation_Constant = 1.191042869e-8
 Second_Radiation_Constant = 1.4387770
 
 
@@ -22,7 +22,7 @@ for key in Atmosphere:
 def planck(temperature, wavenumber):
     fnord1 = Second_Radiation_Constant * wavenumber / temperature
     fnord2 = np.expm1(fnord1)
-    result = First_Radiation_Constant * (wavenumber ** 3) / fnord2;
+    result = First_Radiation_Constant * (wavenumber ** 3) / fnord2
     return result, (result / fnord2) * (fnord2 + 1) * fnord1 / temperature
 
 
@@ -49,7 +49,7 @@ def model(wavenumber, pressures, xsc, temperatures, vmrs):
         radiance += s * transmissivity * e
 
         radiance_adj[i] = s * transmissivity * e_adj + s_adj * transmissivity * e
-        radiance_adj[:i] += transmissivity_adj[:i] * s * e;
+        radiance_adj[:i] += transmissivity_adj[:i] * s * e
 
         transmissivity_adj[:i] *= (1. - e)
         transmissivity_adj[i] -= transmissivity * e_adj
@@ -72,7 +72,7 @@ class ForwardModel(object):
             self._temperatures = x
             results = [model(792, self._pressures, xsc, self._temperatures, self._vmrs)
                        for xsc in self._xscs]
-            self._radiances, self._jacobian = [np.asarray([x[i] for x in results]) for i in [0, 1]]
+            self._radiances, self._jacobian = [np.asarray([_x[i] for _x in results]) for i in [0, 1]]
 
     def __call__(self, x):
         self._update(x)
@@ -89,7 +89,6 @@ class ForwardModel(object):
         return self.jac(x).T.dot(vec)
 
 
-
 class CostFunction(object):
     def __init__(self):
         import scipy.sparse
@@ -98,7 +97,7 @@ class CostFunction(object):
         self._x_t = Atmosphere["temperature"]
         self._lambda = 1e-8
         self._y_t = self._F(self._x_t)
-        self._y = self._y_t * (100 + 5 *  np.random.randn(len(self._y_t))) / 100.
+        self._y = self._y_t * (100 + 5 * np.random.randn(len(self._y_t))) / 100.
 
         self.m = len(self._y)
         self.n = len(self._x_t)
@@ -137,21 +136,21 @@ class CostFunction(object):
     def chisq_a(self):
         return self._chisqa
 
+
 def _test():
     h = 1e-3
     xsc = 1e-18
     y0, adj = planck(300, 790)
     y1, _ = planck(300 + h, 790)
-    print((y1- y0) / h, adj)
+    print((y1 - y0) / h, adj)
 
     y0, adj = convert_vmr_to_numberdensity(300, 100, 1e-6)
     y1, _ = convert_vmr_to_numberdensity(300 + h, 100, 1e-6)
-    print((y1- y0) / h, adj)
+    print((y1 - y0) / h, adj)
 
     y0, adj = convert_vmr_to_emissivity(300, 100, 1e-6, xsc)
     y1, _ = convert_vmr_to_emissivity(300 + h, 100, 1e-6, xsc)
-    print((y1- y0) / h, adj)
-
+    print((y1 - y0) / h, adj)
 
     y0, adj = model(792, Atmosphere["pressure"], xsc, Atmosphere["temperature"], Atmosphere["CO2"])
     t2 = Atmosphere["temperature"]
@@ -165,6 +164,7 @@ def _test():
     print(adj2)
     print(adj)
 
+
 def _test2():
     import jutil.minimizer as mini
     import numpy.linalg as la
@@ -172,20 +172,15 @@ def _test2():
     J = CostFunction()
 
     for maxit, stepper in [
-#            (1000, mini.SteepestDescentStepper()),
-#            (200, mini.ScaledSteepestDescentStepper()),
-#            (20, mini.LevenbergMarquardtStepper(1e-10, 10)),
             (20, mini.LevenbergMarquardtReductionStepper(1, 10.)),
-#            (40, mini.GaussNewtonStepper()),
-#            (20, mini.TruncatedQuasiNewtonStepper(1e-4, 10))
-            ]:
+    ]:
         print(maxit)
         optimize = mini.Minimizer(stepper)
         optimize.conv_max_iteration = maxit
         optimize2 = mini.Minimizer(mini.LevenbergMarquardtPredictorStepper(1, 10.))
         optimize2.conv_max_iteration = maxit
-        x_f =  optimize(J, 220 * np.ones_like(J._x_t))
-        x_f2 =  optimize2(J, 220 * np.ones_like(J._x_t))
+        x_f = optimize(J, 220 * np.ones_like(J._x_t))
+        x_f2 = optimize2(J, 220 * np.ones_like(J._x_t))
 #        J._lambda = 0
 #        x_f2 =  optimize(J, 220 * np.ones_like(J._x_t))
 #        x_f =  optimize(J, J._x_t + 10)

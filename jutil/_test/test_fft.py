@@ -36,6 +36,7 @@ def test_fft():
         x = np.random.random(n) + 1j * np.random.random(n)
         assert_almost_equal(jfft.fft(x), npfft.fft(x))
 
+
 def test_ifft():
     for n in NS:
         x = np.random.random(n) + 1j * np.random.random(n)
@@ -60,6 +61,7 @@ def test_rfft2():
         for n2 in NS:
             x = np.random.random((n1, n2))
             assert_almost_equal(jfft.rfft2(x), npfft.rfft2(x))
+
 
 def test_irfft2():
     for n1 in NS:
@@ -100,6 +102,7 @@ def test__rfft2():
             x = np.random.random((n1, n2))
             assert_almost_equal(jfft.rfft2(x), jfft._rfft2(x))
 
+
 def test__irfft2():
     for n1 in NS:
         for n2 in NS:
@@ -117,7 +120,9 @@ def test_fft_adj():
         x = np.random.random(2 * n)
         ATx_1 = A.T.dot(x)
         ATx_2 = c2r(jfft.fft_adj(r2c(x)))
-        assert_almost_equal(ATx_1, ATx_2, err_msg=str((ATx_1, ATx_2, ATx_1 - ATx_2, 100 * (ATx_1 - ATx_2) / ATx_2)), decimal=6)
+        assert_almost_equal(
+            ATx_1, ATx_2,
+            err_msg=str((ATx_1, ATx_2, ATx_1 - ATx_2, 100 * (ATx_1 - ATx_2) / ATx_2)), decimal=6)
 
 
 def test_ifft_adj():
@@ -137,7 +142,7 @@ def test_rfft_adj():
         m = n // 2 + 1
 
         A = jdiff.fd_jac(wrap(jfft.rfft, None, False, True), np.zeros(n))
-        B = jdiff.fd_jac(wrap(jfft.rfft_adj, None, True, False, {"n":n}), np.zeros(2 * m)).T
+        B = jdiff.fd_jac(wrap(jfft.rfft_adj, None, True, False, {"n": n}), np.zeros(2 * m)).T
         assert_almost_equal(A, B, err_msg=str((A, B, A - B)))
 
         x = np.random.random(A.shape[0])
@@ -150,7 +155,7 @@ def test_irfft_adj():
     for n in NS:
         m = n // 2 + 1
 
-        A = jdiff.fd_jac(wrap(jfft.irfft, m, True, False, {"n":n}), np.zeros(m * 2))
+        A = jdiff.fd_jac(wrap(jfft.irfft, m, True, False, {"n": n}), np.zeros(m * 2))
         B = jdiff.fd_jac(wrap(jfft.irfft_adj, None, False, True), np.zeros(n)).T
         assert_almost_equal(A, B, err_msg=str((A, B, A - B)))
 
@@ -166,7 +171,7 @@ def test_rfft2_adj():
             m = n2 // 2 + 1
 
             A = jdiff.fd_jac(wrap(jfft.rfft2, (n1, n2), False, True), np.zeros(n1 * n2))
-            B = jdiff.fd_jac(wrap(jfft.rfft2_adj, (n1, m), True, False, {"n":n2}),
+            B = jdiff.fd_jac(wrap(jfft.rfft2_adj, (n1, m), True, False, {"n": n2}),
                              np.zeros(2 * n1 * m)).T
             assert_almost_equal(A, B, err_msg=str((A, B, A - B)))
 
@@ -181,10 +186,10 @@ def test_irfft2_adj():
         for n2 in [2, 4, 10, 11, 16, 17, 21]:
             m = n2 // 2 + 1
 
-            A = jdiff.fd_jac(wrap(jfft.irfft2, (n1, m), True, False, {"s":(n1, n2)}),
+            A = jdiff.fd_jac(wrap(jfft.irfft2, (n1, m), True, False, {"s": (n1, n2)}),
                              np.zeros(n1 * m * 2))
             B = jdiff.fd_jac(wrap(jfft.irfft2_adj, (n1, n2), False, True), np.zeros(n1 * n2)).T
-            assert_almost_equal(A, B, err_msg=str((A, B, A-B)))
+            assert_almost_equal(A, B, err_msg=str((A, B, A - B)))
 
             x = np.random.random(A.shape[0])
             ATx_1 = r2c(A.T.dot(x))

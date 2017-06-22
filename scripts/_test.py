@@ -63,7 +63,7 @@ class CostFunctionImage(object):
                 S[self.n + i, i] = -1
                 S[self.n + i, i + 256] = 1
         self._Sa_inv = S.tocsr()
-
+        print(dir(norms))
         self._norm = norms.WeightedTVNorm(norms.NormLPPow(p, 1e-5), self._Sa_inv, [self.n, 2 * self.n])
 
     def init(self, x_i):
@@ -250,7 +250,6 @@ def split_bregman_2d_test(image_t, image, ig=None, weight=100, max_iter=300, mu=
     pylab.subplot(1, 3, 3)
     pylab.pcolor(image_t.reshape(256, 256), vmin=0, vmax=256)
     pylab.savefig("test.png")
-    exit()
 
     return u.reshape(n_root, n_root)
 
@@ -367,7 +366,7 @@ def tv_denoise_2d(image, weight=50, eps=2.e-4, keep_type=False):
     return out
 
 
-def _test(Type, name, l1, l2):
+def dummy_test(Type, name, l1, l2):
     J11 = Type(1.01, 200)
     J2 = Type(2., l2)
     J2._y = J11._y
@@ -427,5 +426,5 @@ def _test(Type, name, l1, l2):
     pylab.savefig(name +".png", dpi=300)
 
 #_test(CostFunctionLena, "lena", 60, 1)
-_test(CostFunctionSquares, "squa", 6000, 5)
+#_test(CostFunctionSquares, "squa", 6000, 5)
 

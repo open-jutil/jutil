@@ -13,8 +13,8 @@ def execute_matrix(A, diag=None):
     else:
         ATA = A.T.dot(A)
     assert_almost_equal(
-            ATA.diagonal().squeeze(),
-            jutil.linalg.quick_diagonal_product(A, diag))
+        ATA.diagonal().squeeze(),
+        jutil.linalg.quick_diagonal_product(A, diag))
 
 
 def test_sparse_csr():

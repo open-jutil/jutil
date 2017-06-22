@@ -4,7 +4,9 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
-import numpy.linalg as la
+import jutil
+import jutil.misc
+import jutil.norms as norms
 
 
 class CostFunction(object):
@@ -26,15 +28,17 @@ class CostFunction(object):
     def jac(self, x):
         return 2. * (self._A.T.dot(self._A.dot(x) - self._y) + self._lambda * self._norm.jac(x)) / self.m
 
-    def hess_dot(self, _, vec):
+    def hess_dot(self, x, vec):
         return 2. * (self._A.T.dot(self._A.dot(vec)) + self._lambda * self._norm.hess_dot(x, vec)) / self.m
 
     @property
     def chisq(self):
         return self._chisq
+
     @property
     def chisq_m(self):
         return self._chisqm
+
     @property
     def chisq_a(self):
         return self._chisqa
@@ -65,7 +69,7 @@ def test(name, A, image, mu, lambd, noise, weight):
     import os
     if os.path.exists(name + ".png"):
         return
-    n = image.shape[0] * image.shape[1]
+    # n = image.shape[0] * image.shape[1]
     n_root = image.shape[0]
 
     D = op.VStack([get_diff_operator(np.ones((n_root, n_root), dtype=bool), axis)
@@ -82,30 +86,35 @@ def test(name, A, image, mu, lambd, noise, weight):
     plt.subplot(2, 3, 1)
     plt.title("Original")
     plt.pcolor(image, vmin=0, vmax=255, cmap=img_map)
-    plt.xlim(0, 255); plt.ylim(0, 255)
+    plt.xlim(0, 255)
+    plt.ylim(0, 255)
     plt.subplot(2, 3, 2)
     plt.title("l1")
     plt.pcolor(x_l1.reshape(256, 256), vmin=0, vmax=255, cmap=img_map)
-    plt.xlim(0, 255); plt.ylim(0, 255)
+    plt.xlim(0, 255)
+    plt.ylim(0, 255)
     plt.subplot(2, 3, 3)
     plt.title("l2")
     plt.pcolor(x_l2.reshape(256, 256), vmin=0, vmax=255, cmap=img_map)
-    plt.xlim(0, 255); plt.ylim(0, 255)
+    plt.xlim(0, 255)
+    plt.ylim(0, 255)
     if A is jutil.operator.Identity:
         plt.subplot(2, 3, 5)
         plt.pcolor(y.reshape(256, 256) - image, vmin=-60, vmax=60, cmap=plt.cm.RdBu)
-        plt.xlim(0, 255); plt.ylim(0, 255)
+        plt.xlim(0, 255)
+        plt.ylim(0, 255)
     plt.subplot(2, 3, 5)
     plt.pcolor(x_l1.reshape(256, 256) - image, vmin=-60, vmax=60, cmap=plt.cm.RdBu)
-    plt.xlim(0, 255); plt.ylim(0, 255)
+    plt.xlim(0, 255)
+    plt.ylim(0, 255)
     plt.subplot(2, 3, 6)
     plt.pcolor(x_l2.reshape(256, 256) - image, vmin=-60, vmax=60, cmap=plt.cm.RdBu)
-    plt.xlim(0, 255); plt.ylim(0, 255)
-    plt.savefig(name +".png", dpi=300)
+    plt.xlim(0, 255)
+    plt.ylim(0, 255)
+    plt.savefig(name + ".png", dpi=300)
 
-#_test(CostFunctionLena, "lena", 60, 1)
-import jutil.misc
-import jutil
+
+#  _test(CostFunctionLena, "lena", 60, 1)
 
 T = get_tomography_operator(256, 8)
 I = jutil.operator.Identity(256 ** 2)
@@ -115,4 +124,3 @@ for mu in [1e-1, 2e-1, 5e-1, 1e-0, 2e-0, 5e0]:
         test("tphantom1_{:010.4f}_{:010.4f}".format(mu, weight), T, jutil.misc.get_phantom_1(), mu, 1, 0.01, weight)
         test("nlena256_{:010.4f}_{:010.4f}".format(mu, weight), I, jutil.misc.get_lena_256(), mu, 1, 0.5, weight)
         test("nphantom1_{:010.4f}_{:010.4f}".format(mu, weight), I, jutil.misc.get_phantom_1(), mu, 1, 0.5, weight)
-

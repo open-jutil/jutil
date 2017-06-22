@@ -8,7 +8,7 @@ import numpy as np
 import jutil.norms
 import jutil.linalg
 import jutil.diff
-import logging
+
 
 class AbstractCostFunction(object):
     """

@@ -25,7 +25,7 @@ def test_fd_hess():
 
     assert_almost_equal(
         jutil.diff.fd_hess(f, np.asarray([2, 3])),
-        np.asarray([[2, 0], [0, 6*3]]),
+        np.asarray([[2, 0], [0, 6 * 3]]),
         decimal=2)
 
     assert_almost_equal(
@@ -40,7 +40,7 @@ def get_diff_op_old(mask):
 
     DiffOp = scipy.sparse.lil_matrix((2 * n, n))
     mask1 = mask.copy().squeeze()
-    mask1[1:, :] = mask1[1:, :] & mask1[:-1,:]
+    mask1[1:, :] = mask1[1:, :] & mask1[:-1, :]
     mask1[0, :] = False
     mask2 = mask.copy().squeeze()
     mask2[:, 1:] = mask2[:, 1:] & mask2[:, :-1]
@@ -70,15 +70,16 @@ def get_diff_op_old(mask):
     return DiffOp
 
 
-mask = np.zeros((50,50), dtype=bool)
+mask = np.zeros((50, 50), dtype=bool)
 for i in range(1, 40):
     for j in range(1, 40):
         mask[i, j] = True
 
+
 def test_diff():
     import jutil.operator as op
-    #import timeit
-    #print timeit.timeit("get_diff_op(mask, 0, factor=3)", setup="from __main__ import *", number=10)
+    #  import timeit
+    #  print timeit.timeit("get_diff_op(mask, 0, factor=3)", setup="from __main__ import *", number=10)
 
     A = op.VStack([jutil.diff.get_diff_operator(mask, i, factor=3) for i in [0, 1]])
     B = get_diff_op_old(mask)

@@ -245,7 +245,9 @@ class LevenbergMarquardtReductionStepper(LevenbergMarquardtAbstractBase):
             if chisq > chisq_old:
                 self._lmpar *= self._lmpar_factor
                 if self._lmpar > 1e30:
-                    raise RuntimeError("Retrieval failed (levenberg marquardt parameter too large)! i" + repr(self._lmpar))
+                    raise RuntimeError(
+                        "Retrieval failed (levenberg marquardt parameter too large)! i" +
+                        repr(self._lmpar))
                 self._log.info("Increasing lmpar to {} ({} > {})".format(self._lmpar, chisq, chisq_old))
             else:
                 self._lmpar /= self._lmpar_factor
@@ -271,7 +273,9 @@ class LevenbergMarquardtPredictorStepper(LevenbergMarquardtAbstractBase):
             if chisq_factor < 0.25:
                 self._lmpar *= self._lmpar_factor
                 if self._lmpar > 1e30:
-                    raise RuntimeError("Retrieval failed (levenberg marquardt parameter too large)! i" + repr(self._lmpar))
+                    raise RuntimeError(
+                        "Retrieval failed (levenberg marquardt parameter too large)! i" +
+                        repr(self._lmpar))
                 self._log.info("Increasing lmpar to {} ({} < 0.25)".format(self._lmpar, chisq_factor))
             elif chisq_factor > 0.5:
                 self._lmpar /= self._lmpar_factor
@@ -448,8 +452,10 @@ class TruncatedCGTrustRegionStepper2(object):
             chisq = J(x_new)
             chisq_factor = chisq_pred / chisq
 
-            self._log.info("  try {} with err_rel= {} , new chisq= {} , old chisq= {}, chisq_pred= {}, chisq_factor= {}".format(
-                i, err_rels[i], chisq, chisq_old, chisq_pred, chisq_factor))
+            self._log.info(
+                "  try {} with err_rel= {} , new chisq= {} , old chisq= {}, chisq_pred= {}, "
+                "chisq_factor= {}".format(
+                    i, err_rels[i], chisq, chisq_old, chisq_pred, chisq_factor))
 
             if chisq < chisq_old + 0.2 * delta_chisq_pred:
                 self._conv_rel = err_rels[i]

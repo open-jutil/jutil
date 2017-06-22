@@ -1,6 +1,9 @@
 import numpy as np
 import scipy.sparse as sp
-from jutil.norms import *
+import jutil
+print jutil.__file__
+from jutil.norms import LPPow, L1, L2Square, WeightedNorm, \
+    Huber, Ekblom, BiSquared, WeightedL2Square, WeightedTVNorm
 from jutil.diff import fd_jac
 from numpy.testing import assert_almost_equal
 
@@ -25,7 +28,7 @@ def test_tv():
     W[4, 3] = 1
     W[4, 2] = -1
     W[5, 3] = 1
-    norm = WeightedTV(LPPow(1., 0), W, [2, 4])
+    norm = WeightedTVNorm(LPPow(1., 0), W, [2, 4])
 
     x = 1 + np.arange(4.)
 
@@ -57,9 +60,9 @@ for name, norm in [
         ("BiSquared_4", BiSquared(4.)),
         ("BiSquared_22", BiSquared(22.)),
         ("WeightedNorm_Huber", WeightedNorm(Huber(1.5), weight))
-        ]:
+]:
     current_module = __import__(__name__)
-    test_function = (lambda y : lambda : execute_norm(y))(norm)
+    test_function = (lambda y: lambda: execute_norm(y))(norm)
     test_function.__name__ = "test_" + name
     setattr(current_module, test_function.__name__, test_function)
 

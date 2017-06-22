@@ -2,30 +2,14 @@ from __future__ import print_function
 
 import jutil
 import jutil.norms as norms
-import jutil.lnsrch as lnsrch
 from jutil.minimizer import minimize
 import numpy as np
-import numpy.linalg as la
-import logging
 
 jutil.misc.setup_logging()
-#logger = logging.getLogger('jutil')
-#logger.setLevel(logging.DEBUG)
-#ch = logging.StreamHandler()
-#ch.setLevel(logging.INFO)
-#fh = logging.FileHandler('jutil.log')
-#fh.setLevel(logging.DEBUG)
-#ff = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-#cf = logging.Formatter('jutil:%(message)s')
-#ch.setFormatter(cf)
-#fh.setFormatter(ch)
-#logger.addHandler(ch)
-#logger.addHandler(fh)
 
 n = 100
-p = 2#1.1
+p = 2  # 1.1
 q = 1. / (1. - (1. / p))
-print(p, q)
 
 
 class CostFunction(object):
@@ -59,13 +43,16 @@ lp = norms.LPPow(p, 1e-20)
 lq = norms.LPPow(q, 1e-20)
 
 lAp = norms.WeightedNorm(lp, A)
-lAq = norms.WeightedNorm(lq, AI.T * n) # n for division by m in J
+lAq = norms.WeightedNorm(lq, AI.T * n)  # n for division by m in J
 
 x = np.random.random(n)
 J = CostFunction(lAp, x)
 
-P = lambda _, x: (1. / q) * lAq.jac(x)
-print(AI**2*n**2)
+
+def P(_):
+    return (1. / q) * lAq.jac(x)
+
+print(AI ** 2 * n ** 2)
 print(P(None, np.ones(n)))
 tol = {"max_iteration": 10}
 

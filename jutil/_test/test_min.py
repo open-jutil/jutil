@@ -1,8 +1,6 @@
 import jutil.minimizer as mini
 import numpy as np
-import numpy.linalg as la
 from numpy.testing import assert_almost_equal
-import time
 
 
 class CostFunction(object):
@@ -57,7 +55,7 @@ def execute_minimizer(max_it, stepper):
 
 def execute_minimize(max_it, method, options):
     J = CostFunction()
-    x0 =  0.5 * np.ones(J.n)
+    x0 = 0.5 * np.ones(J.n)
     result = mini.minimize(J, x0, method=method, options=options, tol={"max_iteration": max_it})["x"]
     assert_almost_equal(result, J._x_t)
 
@@ -69,21 +67,21 @@ def execute_scipy(method):
 
 
 for maxit, stepper, options in [
-            (1000, "SteepestDescent", {}),
-            (1000, "CauchyPointSteepestDescent", {}),
-            (10, "LevenbergMarquardtReduction", {"lmpar": 1e-4, "factor": 100}),
-            (10, "LevenbergMarquardtPredictor", {"lmpar": 10., "factor": 100.}),
-            (10, "GaussNewton", {}),
-            (10, "TruncatedCGQuasiNewton", {}),
-            (10, "TrustRegionTruncatedCGQuasiNewton", {})
-            ]:
+        (1000, "SteepestDescent", {}),
+        (1000, "CauchyPointSteepestDescent", {}),
+        (10, "LevenbergMarquardtReduction", {"lmpar": 1e-4, "factor": 100}),
+        (10, "LevenbergMarquardtPredictor", {"lmpar": 10., "factor": 100.}),
+        (10, "GaussNewton", {}),
+        (10, "TruncatedCGQuasiNewton", {}),
+        (10, "TrustRegionTruncatedCGQuasiNewton", {})
+]:
     current_module = __import__(__name__)
-    test_function = (lambda y: lambda : execute_minimize(*y))((maxit, stepper, options))
+    test_function = (lambda y: lambda: execute_minimize(*y))((maxit, stepper, options))
     test_function.__name__ = "test_minimize_" + stepper
     setattr(current_module, test_function.__name__, test_function)
 
     instance = getattr(mini, stepper + "Stepper")(**options)
-    test_function2 = (lambda y: lambda : execute_minimizer(*y))((maxit, instance))
+    test_function2 = (lambda y: lambda: execute_minimizer(*y))((maxit, instance))
     test_function2.__name__ = "test_minimizer_" + type(instance).__name__
     setattr(current_module, test_function2.__name__, test_function2)
 
@@ -93,9 +91,9 @@ for method in [
         "Newton-CG",
         "CG",
         "trust-ncg",
-        ]:
+]:
     current_module = __import__(__name__)
-    test_function = (lambda y: lambda : execute_scipy(y))(method)
+    test_function = (lambda y: lambda: execute_scipy(y))(method)
     test_function.__name__ = "test_scipy_" + method
     setattr(current_module, test_function.__name__, test_function)
 

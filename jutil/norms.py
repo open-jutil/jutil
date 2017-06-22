@@ -94,7 +94,7 @@ class BiSquared(_BaseNorm):
         return self.hess_diag(x) * vec
 
 
-class WeightedTV(object):
+class WeightedTVNorm(object):
     """
     Provides a TV norm if a proper weight matrix is supplied.
     It is assumed that the first elements of the weight-vector product represents the partial

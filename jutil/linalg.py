@@ -32,4 +32,7 @@ def quick_diagonal_product(matrix, diagonal=None):
             result[col_idx] = np.dot(diagonal, matrix[:, col_idx] ** 2)
         return result
     else:
-        raise TypeError("Unsupported type in quick_diagonal_product. Unless an optimized execution is available it were better not to use this kind of product.")
+        raise TypeError(
+            "Unsupported type in quick_diagonal_product. "
+            "Unless an optimized execution is available it were better not to use "
+            "this kind of product.")

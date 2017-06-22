@@ -123,14 +123,14 @@ def get_mass_stiff(mask):
     cols, rows, vals_m, vals_l = [], [], [], []
 
     weights = {
-            1: ([4. / 6., 1. / 6.], [2., -1.]),
-            2: ([4. / 9., 1. / 9., 1. / 36.],
-                [8. / 3., -1. / 3., -1. / 3.]),
-            3: ([64. / 216., 16. / 216., 4. / 216., 1. / 216.],
-                [32. / 12., 0., -2. / 12., -1. / 12.]),
-            }[len(shape)]
+        1: ([4. / 6., 1. / 6.], [2., -1.]),
+        2: ([4. / 9., 1. / 9., 1. / 36.],
+            [8. / 3., -1. / 3., -1. / 3.]),
+        3: ([64. / 216., 16. / 216., 4. / 216., 1. / 216.],
+            [32. / 12., 0., -2. / 12., -1. / 12.]),
+    }[len(shape)]
 
-    offsets = np.asarray(mask.strides) / mask.dtype.itemsize
+    # offsets = np.asarray(mask.strides) / mask.dtype.itemsize
     for neighbours in itto.product(*[[-1, 0, 1] for _ in range(len(shape))]):
         kind = abs(np.asarray(neighbours)).sum()
         idx1 = np.where(mask.reshape(-1))[0]
@@ -160,7 +160,7 @@ def get_mass2(mask):
     M = np.zeros((n, n))
 
     neighs = [[-1, 0, 1] for _ in range(len(shape))]
-    offsets = [x / mask.dtype.itemsize for x in mask.strides]
+    # offsets = [x / mask.dtype.itemsize for x in mask.strides]
     for neigh in itto.product(*neighs):
         kind = abs(np.asarray(neigh)).sum()
         js = []
@@ -216,10 +216,12 @@ def get_mass(shape):
     L = scipy.sparse.coo_matrix((vals_l, (rows, cols)), (n, n)).tocsr()
     return M, L
 
+
 def f0(x):
     r1 = 1 - abs(x)
     r1 = np.where(r1 > 0, r1, np.zeros_like(r1))
     return r1
+
 
 def f0_jac(x):
     r1 = 1 - abs(x)
@@ -228,10 +230,12 @@ def f0_jac(x):
     r1_x = np.where(r1 > 0, r1_x, np.zeros_like(r1))
     return r1_x
 
+
 def f1(x):
     r1 = 1 - abs(1 - x)
     r1 = np.where(r1 > 0, r1, np.zeros_like(r1))
     return r1
+
 
 def f1_jac(x):
     r1 = 1 - abs(1 - x)
@@ -240,62 +244,68 @@ def f1_jac(x):
     r1_x = np.where(r1 > 0, r1_x, np.zeros_like(r1))
     return r1_x
 
-def f00(x,y):
+
+def f00(x, y):
     r1 = 1 - abs(x)
     r2 = 1 - abs(y)
-    r1, r2 = [np.where(x > 0, x, np.zeros_like(x)) for x in [r1, r2]]
+    r1, r2 = [np.where(_x > 0, _x, np.zeros_like(_x)) for _x in [r1, r2]]
     return r1 * r2
+
 
 def f00_jac(x, y):
     r1 = 1 - abs(x)
     r1_x = -np.sign(x)
     r2 = 1 - abs(y)
     r2_y = -np.sign(y)
-    r1, r2 = [np.where(x > 0, x, np.zeros_like(x)) for x in [r1, r2]]
+    r1, r2 = [np.where(_x > 0, _x, np.zeros_like(_x)) for _x in [r1, r2]]
     r1_x = np.where(r1 > 0, r1_x, np.zeros_like(r1))
     r2_y = np.where(r2 > 0, r2_y, np.zeros_like(r2))
     return [r1_x * r2, r1 * r2_y]
 
 
-def f11(x,y):
+def f11(x, y):
     r1 = 1 - abs(1 - x)
     r2 = 1 - abs(1 - y)
-    r1, r2 = [np.where(x > 0, x, np.zeros_like(x)) for x in [r1, r2]]
+    r1, r2 = [np.where(_x > 0, _x, np.zeros_like(_x)) for _x in [r1, r2]]
     return r1 * r2
+
 
 def f11_jac(x, y):
     r1 = 1 - abs(1 - x)
     r1_x = np.sign(1 - x)
     r2 = 1 - abs(1 - y)
     r2_y = np.sign(1 - y)
-    r1, r2 = [np.where(x > 0, x, np.zeros_like(x)) for x in [r1, r2]]
+    r1, r2 = [np.where(_x > 0, _x, np.zeros_like(_x)) for _x in [r1, r2]]
     r1_x = np.where(r1 > 0, r1_x, np.zeros_like(r1))
     r2_y = np.where(r2 > 0, r2_y, np.zeros_like(r2))
     return [r1_x * r2, r1 * r2_y]
 
 
-def f01(x,y):
+def f01(x, y):
     r1 = 1 - abs(x)
     r2 = 1 - abs(1 - y)
-    r1, r2 = [np.where(x > 0, x, np.zeros_like(x)) for x in [r1, r2]]
+    r1, r2 = [np.where(_x > 0, _x, np.zeros_like(_x)) for _x in [r1, r2]]
     return r1 * r2
+
 
 def f01_jac(x, y):
     r1 = 1 - abs(x)
     r1_x = -np.sign(x)
     r2 = 1 - abs(1 - y)
     r2_y = np.sign(1 - y)
-    r1, r2 = [np.where(x > 0, x, np.zeros_like(x)) for x in [r1, r2]]
+    r1, r2 = [np.where(_x > 0, _x, np.zeros_like(_x)) for _x in [r1, r2]]
     r1_x = np.where(r1 > 0, r1_x, np.zeros_like(r1))
     r2_y = np.where(r2 > 0, r2_y, np.zeros_like(r2))
     return [r1_x * r2, r1 * r2_y]
 
-def f000(x,y,z):
+
+def f000(x, y, z):
     r1 = 1 - abs(x)
     r2 = 1 - abs(y)
     r3 = 1 - abs(z)
-    r1, r2, r3 = [np.where(x > 0, x, np.zeros_like(x)) for x in [r1, r2, r3]]
+    r1, r2, r3 = [np.where(_x > 0, _x, np.zeros_like(_x)) for _x in [r1, r2, r3]]
     return r1 * r2 * r3
+
 
 def f000_jac(x, y, z):
     r1 = 1 - abs(x)
@@ -304,7 +314,7 @@ def f000_jac(x, y, z):
     r2_y = -np.sign(y)
     r3 = 1 - abs(z)
     r3_z = -np.sign(z)
-    r1, r2, r3 = [np.where(x > 0, x, np.zeros_like(x)) for x in [r1, r2, r3]]
+    r1, r2, r3 = [np.where(_x > 0, _x, np.zeros_like(_x)) for _x in [r1, r2, r3]]
     r1_x = np.where(r1 > 1e-16, r1_x, np.zeros_like(r1))
     r2_y = np.where(r2 > 1e-16, r2_y, np.zeros_like(r2))
     r3_z = np.where(r3 > 1e-16, r3_z, np.zeros_like(r3))
@@ -315,8 +325,9 @@ def f111(x, y, z):
     r1 = 1 - abs(1 - x)
     r2 = 1 - abs(1 - y)
     r3 = 1 - abs(1 - z)
-    r1, r2, r3 = [np.where(x > 0, x, np.zeros_like(x)) for x in [r1, r2, r3]]
+    r1, r2, r3 = [np.where(_x > 0, _x, np.zeros_like(_x)) for _x in [r1, r2, r3]]
     return r1 * r2 * r3
+
 
 def f111_jac(x, y, z):
     r1 = 1 - abs(1 - x)
@@ -325,7 +336,7 @@ def f111_jac(x, y, z):
     r2_y = np.sign(1 - y)
     r3 = 1 - abs(1 - z)
     r3_z = np.sign(1 - z)
-    r1, r2, r3 = [np.where(x > 0, x, np.zeros_like(x)) for x in [r1, r2, r3]]
+    r1, r2, r3 = [np.where(_x > 0, _x, np.zeros_like(_x)) for _x in [r1, r2, r3]]
     r1_x = np.where(r1 > 0, r1_x, np.zeros_like(r1))
     r2_y = np.where(r2 > 0, r2_y, np.zeros_like(r2))
     r3_z = np.where(r3 > 0, r3_z, np.zeros_like(r3))
@@ -336,8 +347,9 @@ def f011(x, y, z):
     r1 = 1 - abs(x)
     r2 = 1 - abs(1 - y)
     r3 = 1 - abs(1 - z)
-    r1, r2, r3 = [np.where(x > 0, x, np.zeros_like(x)) for x in [r1, r2, r3]]
+    r1, r2, r3 = [np.where(_x > 0, _x, np.zeros_like(_x)) for _x in [r1, r2, r3]]
     return r1 * r2 * r3
+
 
 def f011_jac(x, y, z):
     r1 = 1 - abs(x)
@@ -346,18 +358,20 @@ def f011_jac(x, y, z):
     r2_y = np.sign(1 - y)
     r3 = 1 - abs(1 - z)
     r3_z = np.sign(1 - z)
-    r1, r2, r3 = [np.where(x > 0, x, np.zeros_like(x)) for x in [r1, r2, r3]]
+    r1, r2, r3 = [np.where(_x > 0, _x, np.zeros_like(_x)) for _x in [r1, r2, r3]]
     r1_x = np.where(r1 > 0, r1_x, np.zeros_like(r1))
     r2_y = np.where(r2 > 0, r2_y, np.zeros_like(r2))
     r3_z = np.where(r3 > 0, r3_z, np.zeros_like(r3))
     return [r1_x * r2 * r3, r1 * r2_y * r3, r1 * r2 * r3_z]
 
+
 def f010(x, y, z):
     r1 = 1 - abs(x)
     r2 = 1 - abs(1 - y)
     r3 = 1 - abs(z)
-    r1, r2, r3 = [np.where(x > 0, x, np.zeros_like(x)) for x in [r1, r2, r3]]
+    r1, r2, r3 = [np.where(_x > 0, _x, np.zeros_like(_x)) for _x in [r1, r2, r3]]
     return r1 * r2 * r3
+
 
 def f010_jac(x, y, z):
     r1 = 1 - abs(x)
@@ -366,7 +380,7 @@ def f010_jac(x, y, z):
     r2_y = np.sign(1 - y)
     r3 = 1 - abs(z)
     r3_z = -np.sign(z)
-    r1, r2, r3 = [np.where(x > 0, x, np.zeros_like(x)) for x in [r1, r2, r3]]
+    r1, r2, r3 = [np.where(_x > 0, _x, np.zeros_like(_x)) for _x in [r1, r2, r3]]
     r1_x = np.where(r1 > 0, r1_x, np.zeros_like(r1))
     r2_y = np.where(r2 > 0, r2_y, np.zeros_like(r2))
     r3_z = np.where(r3 > 0, r3_z, np.zeros_like(r3))
@@ -447,7 +461,3 @@ print np.trapz(np.trapz(bj[0] * cj[0] + bj[1] * cj[1], dx=dx), dx=dx)
 print np.trapz(np.trapz(cj[0] * cj[0] + cj[1] * cj[1], dx=dx), dx=dx)
 
 """
-
-
-
-
