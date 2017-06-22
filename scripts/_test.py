@@ -5,7 +5,6 @@ from __future__ import print_function
 import jutil.minimizer as minimizer
 import numpy as np
 import numpy.linalg as la
-import pylab
 from jutil.taketime import TakeTime
 
 
