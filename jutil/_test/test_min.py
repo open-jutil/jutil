@@ -55,20 +55,20 @@ def execute_minimizer(max_it, stepper):
     J = CostFunction()
     optimize = mini.Minimizer(stepper)
     optimize.update_tolerances({"max_iteration": max_it})
-    assert_almost_equal(optimize(J, 0.5 * np.ones(J.n)).x, J._x_t, decimal=7)
+    assert_almost_equal(optimize(J, 0.5 * np.ones(J.n)).x, J._x_t, decimal=5)
 
 
 def execute_minimize(max_it, method, options):
     J = CostFunction()
     x0 = 0.5 * np.ones(J.n)
     result = mini.minimize(J, x0, method=method, options=options, tol={"max_iteration": max_it})["x"]
-    assert_almost_equal(result, J._x_t, decimal=7)
+    assert_almost_equal(result, J._x_t, decimal=5)
 
 
 def execute_scipy(method):
     J = CostFunction()
     res = mini.scipy_minimize(J, 0.5 * np.ones(J.n), tol=1e-12, method=method)["x"]
-    assert_almost_equal(res, J._x_t, decimal=7)
+    assert_almost_equal(res, J._x_t, decimal=5)
 
 
 for maxit, stepper, options in [
