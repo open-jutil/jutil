@@ -350,6 +350,7 @@ class TruncatedCGGaussNewtonStepper(object):
 
         return x_new - x_i
 
+
 TruncatedCGQuasiNewtonStepper = TruncatedCGGaussNewtonStepper
 
 
@@ -404,6 +405,7 @@ class TruncatedCGTrustRegionStepper(object):
             break
         self._log.info("  Setting reltol to {} ({}<{})".format(self._conv_rel, chisq, chisq_old))
         return x_step
+
 
 TrustRegionTruncatedCGQuasiNewtonStepper = TruncatedCGTrustRegionStepper
 

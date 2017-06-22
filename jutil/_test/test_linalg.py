@@ -34,6 +34,7 @@ def test_array():
     execute_matrix(A)
     execute_matrix(A, np.arange(5.))
 
+
 if __name__ == '__main__':
     from numpy import testing
     testing.run_module_suite()

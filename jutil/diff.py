@@ -386,6 +386,7 @@ def f010_jac(x, y, z):
     r3_z = np.where(r3 > 0, r3_z, np.zeros_like(r3))
     return [r1_x * r2 * r3, r1 * r2_y * r3, r1 * r2 * r3_z]
 
+
 """
 n = 300
 x = np.linspace(-1, 2, n + 1)
