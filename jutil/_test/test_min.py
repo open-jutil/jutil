@@ -5,7 +5,12 @@ from numpy.testing import assert_almost_equal
 
 class CostFunction(object):
     def __init__(self):
-        self._A = np.random.rand(4, 4)
+        # self._A = np.random.rand(4, 4)
+        self._A = np.array(
+            [[0.88494541, 0.60670887, 0.74840765, 0.11873982],
+             [0.13653893, 0.62102802, 0.80779039, 0.90103182],
+             [0.80150651, 0.57204279, 0.41576394, 0.33573904],
+             [0.65005687, 0.06166340, 0.01514931, 0.91255390]])
         for i in range(4):
             self._A[i, i] += 1
         self._x_t = np.ones(4)
@@ -50,20 +55,20 @@ def execute_minimizer(max_it, stepper):
     J = CostFunction()
     optimize = mini.Minimizer(stepper)
     optimize.update_tolerances({"max_iteration": max_it})
-    assert_almost_equal(optimize(J, 0.5 * np.ones(J.n)).x, J._x_t)
+    assert_almost_equal(optimize(J, 0.5 * np.ones(J.n)).x, J._x_t, decimal=7)
 
 
 def execute_minimize(max_it, method, options):
     J = CostFunction()
     x0 = 0.5 * np.ones(J.n)
     result = mini.minimize(J, x0, method=method, options=options, tol={"max_iteration": max_it})["x"]
-    assert_almost_equal(result, J._x_t)
+    assert_almost_equal(result, J._x_t, decimal=7)
 
 
 def execute_scipy(method):
     J = CostFunction()
     res = mini.scipy_minimize(J, 0.5 * np.ones(J.n), tol=1e-12, method=method)["x"]
-    assert_almost_equal(res, J._x_t)
+    assert_almost_equal(res, J._x_t, decimal=7)
 
 
 for maxit, stepper, options in [
