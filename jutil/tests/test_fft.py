@@ -50,7 +50,7 @@ def test_rfft():
 
 def test_irfft():
     for n in NS:
-        m = n / 2 + 1
+        m = n // 2 + 1
         x = np.random.random(m) + 1j * np.random.random(m)
         assert_almost_equal(jfft.irfft(x, n=n), npfft.irfft(x, n=n))
 
@@ -64,7 +64,7 @@ def test_rfft2():
 def test_irfft2():
     for n1 in NS:
         for n2 in NS:
-            m = n2 / 2 + 1
+            m = n2 // 2 + 1
             x = np.random.random((n1, m)) + 1j * np.random.random((n1, m))
             assert_almost_equal(jfft.irfft2(x, s=(n1, n2)), npfft.irfft2(x, s=(n1, n2)))
 
@@ -89,7 +89,7 @@ def test__rfft():
 
 def test__irfft():
     for n in NS:
-        m = n / 2 + 1
+        m = n // 2 + 1
         x = np.random.random(m) + 1j * np.random.random(m)
         assert_almost_equal(jfft.irfft(x, n=n), jfft._irfft(x, n=n))
 
@@ -103,7 +103,7 @@ def test__rfft2():
 def test__irfft2():
     for n1 in NS:
         for n2 in NS:
-            m = n2 / 2 + 1
+            m = n2 // 2 + 1
             x = np.random.random((n1, m)) + 1j * np.random.random((n1, m))
             assert_almost_equal(jfft.irfft2(x, s=(n1, n2)), jfft._irfft2(x, n=n2))
 

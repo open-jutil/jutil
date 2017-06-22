@@ -7,7 +7,14 @@ import numpy as np
 import numpy.linalg as la
 import logging
 import jutil
-from tqdm import tqdm
+
+try:
+    if type(get_ipython()).__name__ == 'ZMQInteractiveShell':  # IPython Notebook!
+        from tqdm import tqdm_notebook as tqdm
+    else:  # IPython, but not a Notebook (e.g. terminal)
+        from tqdm import tqdm
+except NameError:
+    from tqdm import tqdm
 
 LOG = logging.getLogger(__name__)
 
@@ -77,7 +84,7 @@ def conj_grad_solve(A, b, P=None, x_0=None,
     xs = [0 for _ in range(len(rel_tol))]
 
     i = 0
-    with tqdm(total=max_iter, leave=True, disable=not verbose) as pbar:
+    with tqdm(total=max_iter, leave=False, disable=not verbose, desc='CG') as pbar:
         while i < max_iter:
             norm = la.norm(r)
             norm_div_norm_b = norm / norm_b
@@ -95,7 +102,7 @@ def conj_grad_solve(A, b, P=None, x_0=None,
             v[:] = A.dot(p)
             pAp = np.dot(v, p)
             if pAp <= 0:  # negative curvature
-                LOG.warn("CG encountered negative curvature. Is matrix really s.p.d.?")
+                LOG.warning("CG encountered negative curvature. Is matrix really s.p.d.?")
                 break
             lambd = alpha / pAp
             assert not np.isnan(lambd)
@@ -109,6 +116,11 @@ def conj_grad_solve(A, b, P=None, x_0=None,
             p += z
 
             alpha = new_alpha
+
+        try:
+            pbar.sp(close=True)  # Force close even if max_iter is not reached (close() does not!)
+        except:
+            pass
 
     LOG.info("CG needed {}{} iterations to reduce to {} {}".format(
         ("max=" if (i == max_iter) else ""), i, la.norm(r),

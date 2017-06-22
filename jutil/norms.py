@@ -300,9 +300,6 @@ class WeightedNorm(object):
         temp1 = self._weight.dot(x)
         base_hess = self._base.hess(temp1)
         temp2 = self._weight.T.dot(base_hess)
-        print self._weight, temp2
-        print type(temp2), type(self._weight)
-        print temp2.shape, self._weight.shape
         return (self._weight.T.dot(temp2.T)).T
 
     def hess_dot(self, x, vec):
