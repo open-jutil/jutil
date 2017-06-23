@@ -6,10 +6,26 @@ before_script:
 
 stages:
   - test
+  - deploy
 
 test:
   stage: test
   script:
     - python setup.py test
+    - coverage html
+  artifacts:
+      paths:
+          - htmlcov/
 
-
+pages:
+  stage: deploy
+  dependencies:
+    - test
+  script:
+    - mv htmlcov/ public/
+  artifacts:
+    paths:
+      - public
+    expire_in: 30 days
+  only:
+    - master 
