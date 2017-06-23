@@ -3,7 +3,7 @@ DISTNAME = 'jutil'
 DESCRIPTION = 'Juelich Tomographic Inversion Library'
 MAINTAINER = 'Joern Ungermann'
 MAINTAINER_EMAIL = 'j.ungermann@fz-juelich.de'
-VERSION = '0.1.0-dev'
+VERSION = '0.2.0-dev'
 
 import os
 import subprocess
@@ -30,20 +30,19 @@ def configuration(parent_package='', top_path=None):
     return config
 
 
-def hg_version():
+def git_version():
     try:
-        hg_rev = subprocess.check_output(['git', 'rev-parse', 'HEAD']).strip()
+        git_rev = subprocess.check_output(['git', 'rev-parse', 'HEAD']).strip()
     except:
-        hg_rev = "???"
-    return hg_rev
+        git_rev = "???"
+    return git_rev
 
 
 def write_version_py(filename='jutil/version.py'):
     version_string = "# THIS FILE IS GENERATED FROM THE JUTIL SETUP.PY\n" + \
-        'version = "{}"\n'.format(VERSION) + \
-        'HG_REVISION = "{}"\n'.format(hg_version())
-    with open(os.path.join(os.path.dirname(__file__),
-                           filename), 'w') as vfile:
+        'VERSION = "{}"\n'.format(VERSION) + \
+        'GIT_REVISION = "{}"\n'.format(git_version())
+    with open(os.path.join(os.path.dirname(__file__), filename), 'w') as vfile:
         vfile.write(version_string)
 
 
@@ -56,11 +55,9 @@ if __name__ == "__main__":
         maintainer=MAINTAINER,
         maintainer_email=MAINTAINER_EMAIL,
         version=VERSION,
-        test_suite="nose.collector",
-        setup_requires=["numpy>=1.6",
-                        "nose"],
+        setup_requires=["numpy>=1.6", "pytest-runner"],
+        tests_require=['pytest'],
         install_requires=["numpy>=1.6", "tqdm", "scipy"],
-
         classifiers=[
             'Development Status :: 3 - alpha',
             'Environment :: Console',
@@ -74,9 +71,7 @@ if __name__ == "__main__":
             'Operating System :: Unix',
             'Operating System :: MacOS',
         ],
-
         configuration=configuration,
-
         packages=setuptools.find_packages(exclude=['doc']),
         include_package_data=True,
         zip_safe=False,
