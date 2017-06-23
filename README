@@ -1,5 +1,5 @@
 JUTIL
-~~~~~
+~~~~~~
 
 This package of python utilities is designed to facilitate the solving of medium-sized 
 ill-posed problems by means of iterative techniques.
