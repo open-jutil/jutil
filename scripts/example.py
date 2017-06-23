@@ -117,7 +117,7 @@ def execute(name, A, image, mu, lambd, noise, weight):
         plt.yticks([])
     plt.subplot(2, 3, 5)
     plt.title("diff l1")
-    plt.pcolormesh(x_l1.reshape(256, 256) - image, 
+    plt.pcolormesh(x_l1.reshape(256, 256) - image,
                    vmin=-60, vmax=60, cmap=plt.cm.RdBu, rasterized=True)
     plt.xlim(0, 255)
     plt.ylim(0, 255)
@@ -125,7 +125,7 @@ def execute(name, A, image, mu, lambd, noise, weight):
     plt.yticks([])
     plt.subplot(2, 3, 6)
     plt.title("diff l1")
-    plt.pcolormesh(x_l2.reshape(256, 256) - image, 
+    plt.pcolormesh(x_l2.reshape(256, 256) - image,
                    vmin=-60, vmax=60, cmap=plt.cm.RdBu, rasterized=True)
     plt.xlim(0, 255)
     plt.ylim(0, 255)
@@ -134,13 +134,21 @@ def execute(name, A, image, mu, lambd, noise, weight):
     plt.savefig(name + ".png", dpi=300)
 
 
-#T = get_tomography_operator(256, 8)
-#for mu in [1e-1, 2e-1, 5e-1, 1e-0, 2e-0, 5e0]:
-#    for weight in [1, 10, 50, 100, 200, 1000]:
-#        execute("tlena256_{:010.4f}_{:010.4f}".format(mu, weight), T, jutil.misc.get_lena_256(), mu, 1, 0.01, weight)
-#        execute("tphantom1_{:010.4f}_{:010.4f}".format(mu, weight), T, jutil.misc.get_phantom_1(), mu, 1, 0.01, weight)
-I = jutil.operator.Identity(256 ** 2)
-for mu in [1e-1, 2e-1, 5e-1, 1, 2, 5]:
-    for weight in [1, 10, 50, 100, 200, 1000]:
-        execute("nlena256_{:010.4f}_{:010.4f}".format(mu, weight), I, jutil.misc.get_lena_256(), mu, 1, 0.5, weight)
-        execute("nphantom1_{:010.4f}_{:010.4f}".format(mu, weight), I, jutil.misc.get_phantom_1(), mu, 1, 0.5, weight)
+def tomography():
+    T = get_tomography_operator(256, 8)
+    for mu in [1e-1, 2e-1, 5e-1, 1e-0, 2e-0, 5e0]:
+        for weight in [1, 10, 50, 100, 200, 1000]:
+            execute("tlena256_{:010.4f}_{:010.4f}".format(mu, weight), T, jutil.misc.get_lena_256(), mu, 1, 0.01, weight)
+            execute("tphantom1_{:010.4f}_{:010.4f}".format(mu, weight), T, jutil.misc.get_phantom_1(), mu, 1, 0.01, weight)
+
+
+def denoise():
+    I = jutil.operator.Identity(256 ** 2)
+    for mu in [1e-1, 2e-1, 5e-1, 1, 2, 5]:
+        for weight in [1, 10, 50, 100, 200, 1000]:
+            execute("nlena256_{:010.4f}_{:010.4f}".format(mu, weight), I, jutil.misc.get_lena_256(), mu, 1, 0.5, weight)
+            execute("nphantom1_{:010.4f}_{:010.4f}".format(mu, weight), I, jutil.misc.get_phantom_1(), mu, 1, 0.5, weight)
+
+
+tomography()
+denoise()
