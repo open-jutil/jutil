@@ -58,8 +58,3 @@ def test_scaled_costfunction():
     assert_almost_equal(J.hess(x), jutil.diff.fd_jac(J.jac, x), decimal=3)
     assert_almost_equal(J.hess_dot(x, x), jutil.diff.fd_jac(J.jac, x).dot(x), decimal=3)
     assert_almost_equal(J.hess_diag(x), np.diag(jutil.diff.fd_jac(J.jac, x)), decimal=3)
-
-
-if __name__ == '__main__':
-    from numpy import testing
-    testing.run_module_suite()

@@ -12,8 +12,3 @@ def test_lsqr():
     x = conj_grad_solve(ATA, A.T.dot(b), max_iter=100, abs_tol=1e-10, rel_tol=1e-10)
     x2 = lsqr_solve(A, b, max_iter=100, abs_tol=1e-10, rel_tol=1e-10, rel_change_tol=0)
     assert_almost_equal(x, x2)
-
-
-if __name__ == '__main__':
-    from numpy import testing
-    testing.run_module_suite()

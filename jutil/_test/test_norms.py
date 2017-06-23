@@ -63,7 +63,3 @@ for name, norm in [
     test_function = (lambda y: lambda: execute_norm(y))(norm)
     test_function.__name__ = "test_" + name
     setattr(current_module, test_function.__name__, test_function)
-
-if __name__ == '__main__':
-    from numpy import testing
-    testing.run_module_suite()

@@ -85,8 +85,3 @@ def test_diff():
     B = get_diff_op_old(mask)
     x = np.random.rand(3 * mask.sum())
     assert_equal(A.dot(x), B.dot(x))
-
-
-if __name__ == '__main__':
-    from numpy import testing
-    testing.run_module_suite()

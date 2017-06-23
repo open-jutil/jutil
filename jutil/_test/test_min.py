@@ -101,7 +101,3 @@ for method in [
     test_function = (lambda y: lambda: execute_scipy(y))(method)
     test_function.__name__ = "test_scipy_" + method
     setattr(current_module, test_function.__name__, test_function)
-
-if __name__ == '__main__':
-    from numpy import testing
-    testing.run_module_suite()

@@ -33,8 +33,3 @@ def test_array():
     A = np.arange(25).reshape(5, 5) / 25.
     execute_matrix(A)
     execute_matrix(A, np.arange(5.))
-
-
-if __name__ == '__main__':
-    from numpy import testing
-    testing.run_module_suite()

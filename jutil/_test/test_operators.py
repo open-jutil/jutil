@@ -79,8 +79,3 @@ def test_stack():
     assert_almost_equal(dut2.T.dot(x), A.dot(x[:6]) + B.dot(x[6:6 + 8]) + C.dot(x[6 + 8:]))
     assert_almost_equal(dut2.dot(y), np.concatenate([A.T.dot(y), B.T.dot(y), C.T.dot(y)]))
     assert_almost_equal(np.dot(x, dut2.dot(y)), np.dot(dut2.T.dot(x), y))
-
-
-if __name__ == '__main__':
-    from numpy import testing
-    testing.run_module_suite()

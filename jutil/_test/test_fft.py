@@ -195,8 +195,3 @@ def test_irfft2_adj():
             ATx_1 = r2c(A.T.dot(x))
             ATx_2 = jfft.irfft2_adj(x.reshape(n1, n2)).reshape(-1)
             assert_almost_equal(ATx_1, ATx_2)
-
-
-if __name__ == '__main__':
-    from numpy import testing
-    testing.run_module_suite()

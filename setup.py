@@ -56,7 +56,7 @@ if __name__ == "__main__":
         maintainer_email=MAINTAINER_EMAIL,
         version=VERSION,
         setup_requires=["numpy>=1.6", "pytest-runner"],
-        tests_require=['pytest'],
+        tests_require=['pytest', 'nose'],
         install_requires=["numpy>=1.6", "tqdm", "scipy"],
         classifiers=[
             'Development Status :: 3 - alpha',
