@@ -20,7 +20,7 @@ from . import operator
 from . import preconditioner
 from . import splitbregman
 from . import taketime
-from version import VERSION, GIT_REVISION
+from .version import VERSION, GIT_REVISION
 
 LOG = logging.getLogger(__name__)
 LOG.info("Starting JUTIL V{} GIT{}".format(VERSION, GIT_REVISION))
