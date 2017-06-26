@@ -8,7 +8,7 @@ VERSION = '0.2.0-dev'
 import os
 import subprocess
 import setuptools
-from numpy.distutils.core import setup
+from distutils.core import setup
 from distutils.command.build_py import build_py
 
 
