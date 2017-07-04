@@ -1,14 +1,13 @@
 image: "python:3.5"
 
-before_script:
-  - python --version
-  - pip install scipy
-
 stages:
   - test
 
 test:
   stage: test
   script:
-    - python setup.py develop
-    - python setup.py test
+  - virtualenv jutil-env
+  - source ./jutil-env/bin/activate
+  - pip install scipy numpy nose pytest-cov pytest-flake8 coverage tqdm pytest-runner
+  - python setup.py build
+  - py.test jutil
