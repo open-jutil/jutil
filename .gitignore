@@ -6,4 +6,4 @@ jutil/version.py
 *.swp
 *.patch
 *~
-*.ini
+desktop.ini
