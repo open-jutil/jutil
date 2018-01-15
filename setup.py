@@ -3,7 +3,7 @@ DISTNAME = 'jutil'
 DESCRIPTION = 'Juelich Tomographic Inversion Library'
 MAINTAINER = 'Joern Ungermann'
 MAINTAINER_EMAIL = 'j.ungermann@fz-juelich.de'
-VERSION = '0.2.0-dev'
+VERSION = '0.2.1-dev'
 
 import os
 import subprocess
@@ -39,9 +39,11 @@ def git_version():
 
 
 def write_version_py(filename='jutil/version.py'):
+    revision = git_version()
     version_string = "# THIS FILE IS GENERATED FROM THE JUTIL SETUP.PY\n" + \
         'VERSION = "{}"\n'.format(VERSION) + \
-        'GIT_REVISION = "{}"\n'.format(git_version())
+        'REVISION = "{}"\n'.format(revision) + \
+        'GIT_REVISION = "{}"\n'.format(revision)
     with open(os.path.join(os.path.dirname(__file__), filename), 'w') as vfile:
         vfile.write(version_string)
 
