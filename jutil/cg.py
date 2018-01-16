@@ -119,7 +119,7 @@ def conj_grad_solve(A, b, P=None, x_0=None,
 
         try:
             pbar.sp(close=True)  # Force close even if max_iter is not reached (close() does not!)
-        except:
+        except Exception:
             pass
 
     LOG.info("CG needed {}{} iterations to reduce to {} {}".format(
