@@ -58,7 +58,7 @@ if __name__ == "__main__":
         maintainer_email=MAINTAINER_EMAIL,
         version=VERSION,
         setup_requires=["numpy>=1.6", "pytest-runner", 'pytest'],
-        tests_require=['nose', "pytest-cov", "pytest-flake8", "coverage"],
+        tests_require=["nose", "pytest-cov", "pytest-flake8", "coverage"],
         install_requires=["numpy>=1.6", "tqdm", "scipy"],
         classifiers=[
             'Development Status :: 3 - alpha',
