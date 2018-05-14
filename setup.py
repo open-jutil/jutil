@@ -32,7 +32,7 @@ def configuration(parent_package='', top_path=None):
 
 def git_version():
     try:
-        git_rev = subprocess.check_output(['git', 'rev-parse', 'HEAD']).strip()
+        git_rev = subprocess.check_output(['git', 'rev-parse', 'HEAD']).strip().decode()
     except:
         git_rev = "???"
     return git_rev
