@@ -33,7 +33,7 @@ def configuration(parent_package='', top_path=None):
 def git_version():
     try:
         git_rev = subprocess.check_output(['git', 'rev-parse', 'HEAD']).strip().decode()
-    except:
+    except Exception:
         git_rev = "???"
     return git_rev
 
@@ -58,7 +58,7 @@ if __name__ == "__main__":
         maintainer_email=MAINTAINER_EMAIL,
         version=VERSION,
         setup_requires=["numpy>=1.6", "pytest-runner", 'pytest'],
-        tests_require=['nose', "pytest-cov", "pytest-flake8", "coverage"],
+        tests_require=["nose", "pytest-cov", "pytest-flake8", "coverage"],
         install_requires=["numpy>=1.6", "tqdm", "scipy"],
         classifiers=[
             'Development Status :: 3 - alpha',
