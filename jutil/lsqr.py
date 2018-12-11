@@ -143,17 +143,17 @@ def lsqr_solve(A, b, P=None, x_0=None,
         norm_ATr = la.norm(P.I.dot(-1.0 * phi_bar * alpha * c * v))
         rel_change = 100 * abs(1 - phi_bar / phi_bar_old)
 
-        if ((norm_ATr < abs_tol) or
-                (norm_ATr < rel_tol * norm_ATb) or
-                (rel_change < rel_change_tol)):
+        if ((norm_ATr < abs_tol)
+                or (norm_ATr < rel_tol * norm_ATb)
+                or (rel_change < rel_change_tol)):
             break
-        LOG.debug("LSQR, it={} iterations to reduce to {} {} {} {}".format(
-            i, phi_bar, norm_ATr, norm_ATr / norm_ATb, rel_change))
+        LOG.debug("LSQR, it=%s iterations to reduce to %s %s %s %s",
+                  i, phi_bar, norm_ATr, norm_ATr / norm_ATb, rel_change)
 
         phi_bar_old = phi_bar
 
     x = np.asarray(P.dot(x))
-    LOG.info("LSQR needed {}{} iterations to reduce to {} {} {} {}".format(
+    LOG.info("LSQR needed %s%s iterations to reduce to %s %s %s %s",
              ("max=" if (i == max_iter) else ""), i, phi_bar,
-             norm_ATr, norm_ATr / norm_ATb, rel_change))
+             norm_ATr, norm_ATr / norm_ATb, rel_change)
     return x

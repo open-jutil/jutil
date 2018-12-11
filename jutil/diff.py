@@ -26,7 +26,7 @@ def fd_jac(fun, x, epsilon=1e-6):
     """
     f0 = fun(x)
     return np.asarray([
-        (fun(x + epsilon * np.eye(len(x), 1, -i).squeeze()) - f0)
+        (fun(x + epsilon * np.eye(len(x), 1, -i).T.squeeze()) - f0)
         for i in range(len(x))]).T / epsilon
 
 

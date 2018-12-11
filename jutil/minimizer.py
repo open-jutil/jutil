@@ -199,8 +199,8 @@ class Minimizer(object):
         b = -J.jac(x_i)
         _print_info(self._log, it, J, disq, la.norm(b))
 
-        self._log.debug("J: call={} jac={} hess_dot={} hess={} hess_diag={}".format(
-            J.cnt_call, J.cnt_jac, J.cnt_hess_dot, J.cnt_hess, J.cnt_hess_diag))
+        self._log.debug("J: call=%s jac=%s hess_dot=%s hess=%s hess_diag=%s",
+                        J.cnt_call, J.cnt_jac, J.cnt_hess_dot, J.cnt_hess, J.cnt_hess_diag)
 
         result = OptimizeResult({
             "x": x_i,
@@ -219,7 +219,7 @@ class Minimizer(object):
 
 
 class LevenbergMarquardtAbstractBase(object):
-    def __init__(self, lmpar=1, factor=10,
+    def __init__(self, lmpar=1., factor=10.,
                  cg_max_iter=-1, cg_tol_rel=1e-20, cg_tol_abs=1e-20):
         self._lmpar_init = lmpar
         self._lmpar = self._lmpar_init
@@ -246,12 +246,12 @@ class LevenbergMarquardtReductionStepper(LevenbergMarquardtAbstractBase):
                 self._lmpar *= self._lmpar_factor
                 if self._lmpar > 1e30:
                     raise RuntimeError(
-                        "Retrieval failed (levenberg marquardt parameter too large)! i" +
-                        repr(self._lmpar))
-                self._log.info("Increasing lmpar to {} ({} > {})".format(self._lmpar, chisq, chisq_old))
+                        "Retrieval failed (levenberg marquardt parameter too large)! "
+                        + repr(self._lmpar))
+                self._log.info("Increasing lmpar to %s (%s > %s)", self._lmpar, chisq, chisq_old)
             else:
                 self._lmpar /= self._lmpar_factor
-                self._log.info("Decreasing lmpar to {} ({} < {})".format(self._lmpar, chisq, chisq_old))
+                self._log.info("Decreasing lmpar to %s (%s < %s)", self._lmpar, chisq, chisq_old)
 
                 return x_step
 
@@ -274,12 +274,12 @@ class LevenbergMarquardtPredictorStepper(LevenbergMarquardtAbstractBase):
                 self._lmpar *= self._lmpar_factor
                 if self._lmpar > 1e30:
                     raise RuntimeError(
-                        "Retrieval failed (levenberg marquardt parameter too large)! i" +
-                        repr(self._lmpar))
-                self._log.info("Increasing lmpar to {} ({} < 0.25)".format(self._lmpar, chisq_factor))
+                        "Retrieval failed (levenberg marquardt parameter too large)! "
+                        + repr(self._lmpar))
+                self._log.info("Increasing lmpar to %s (%s < 0.25)", self._lmpar, chisq_factor)
             elif chisq_factor > 0.5:
                 self._lmpar /= self._lmpar_factor
-                self._log.info("Decreasing lmpar to {} ({} > 0.50)".format(self._lmpar, chisq_factor))
+                self._log.info("Decreasing lmpar to %s (%s > 0.50)", self._lmpar, chisq_factor)
             if chisq <= chisq_old:
                 return x_step
 
@@ -391,8 +391,8 @@ class TruncatedCGTrustRegionStepper(object):
             chisq = J(x_new)
             min_reduction = delta_chisq_pred * 0.1  # require 10% of predicted reduction
 
-            self._log.info("  try {} with err_rel= {} , new chisq= {} , old chisq= {}, pred. chisq= {}".format(
-                i, err_rels[i], chisq, chisq_old, chisq_old + delta_chisq_pred))
+            self._log.info("  try %s with err_rel= %s , new chisq= %s , old chisq= %s, pred. chisq= %s",
+                           i, err_rels[i], chisq, chisq_old, chisq_old + delta_chisq_pred)
             if chisq > chisq_old + min_reduction and i + 1 < len(x_steps):
                 continue
             if chisq > chisq_old + min_reduction and i + 1 == len(x_steps):
@@ -403,7 +403,7 @@ class TruncatedCGTrustRegionStepper(object):
             else:
                 self._conv_rel = err_rels[i] / self._factor
             break
-        self._log.info("  Setting reltol to {} ({}<{})".format(self._conv_rel, chisq, chisq_old))
+        self._log.info("  Setting reltol to %s (%s<%s)", self._conv_rel, chisq, chisq_old)
         return x_step
 
 
@@ -455,9 +455,8 @@ class TruncatedCGTrustRegionStepper2(object):
             chisq_factor = chisq_pred / chisq
 
             self._log.info(
-                "  try {} with err_rel= {} , new chisq= {} , old chisq= {}, chisq_pred= {}, "
-                "chisq_factor= {}".format(
-                    i, err_rels[i], chisq, chisq_old, chisq_pred, chisq_factor))
+                "  try %s with err_rel= %s , new chisq= %s , old chisq= %s, chisq_pred= %s, "
+                "chisq_factor= %s", i, err_rels[i], chisq, chisq_old, chisq_pred, chisq_factor)
 
             if chisq < chisq_old + 0.2 * delta_chisq_pred:
                 self._conv_rel = err_rels[i]
@@ -465,7 +464,7 @@ class TruncatedCGTrustRegionStepper2(object):
                     self._conv_rel *= self._factor
                 if chisq_factor > 0.5:
                     self._conv_rel /= self._factor
-                self._log.info("  Setting reltol to {} ({}<{})".format(self._conv_rel, chisq, chisq_old))
+                self._log.info("  Setting reltol to %s (%s<%s)", self._conv_rel, chisq, chisq_old)
                 return x_step
 
             last_step = x_step
@@ -475,7 +474,7 @@ class TruncatedCGTrustRegionStepper2(object):
         x_step = x_new - x_i
         self._conv_rel = 1. / self._factor
 
-        self._log.info("  Setting reltol to {} ({}<{})".format(self._conv_rel, chisq, chisq_old))
+        self._log.info("  Setting reltol to %s (%s<%s)", self._conv_rel, chisq, chisq_old)
         return x_step
 
 
@@ -491,7 +490,7 @@ def minimize(J, x0, method="TruncatedCGTrustRegion", options={}, tol={}, callbac
     * LevenbergMarquardtPredictor
     * GaussNewton
     * TruncatedCGQuasiNewton
-    * TrustRegionTruncatedCGQuasiNewton(default)
+    * TruncatedCGTrustRegion(default)
 
     Parameters
     ----------

@@ -35,8 +35,8 @@ def cgne_solve(A, b, P=None, x_0=None,
         if (norm < abs_tol) or (norm / norm_ATb < rel_tol):
             break
 
-        LOG.debug("CGNE it={}, reduced to {} {}".format(
-            i, norm, norm / norm_ATb, norm_ATb))
+        LOG.debug("CGNE it=%s, reduced to %s %s",
+                  i, norm, norm / norm_ATb, norm_ATb)
 
         t = P.dot(p)
         q = A.dot(t)
@@ -56,8 +56,8 @@ def cgne_solve(A, b, P=None, x_0=None,
         alpha = new_alpha
 
     norm = la.norm(t)
-    LOG.info("CGNE needed {}{} iterations to reduce to {} {}".format(
-        ("max=" if (i == max_iter) else ""), i, norm,
-        norm / norm_ATb, norm_ATb))
+    LOG.info("CGNE needed %s%s iterations to reduce to %s %s",
+             ("max=" if (i == max_iter) else ""), i, norm,
+             norm / norm_ATb, norm_ATb)
 
     return x

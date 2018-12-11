@@ -7,14 +7,7 @@ import numpy as np
 import numpy.linalg as la
 import logging
 import jutil
-
-try:
-    if type(get_ipython()).__name__ == 'ZMQInteractiveShell':  # IPython Notebook!
-        from tqdm import tqdm_notebook as tqdm
-    else:  # IPython, but not a Notebook (e.g. terminal)
-        from tqdm import tqdm
-except NameError:
-    from tqdm import tqdm
+from jutil.misc import tqdm
 
 LOG = logging.getLogger(__name__)
 
@@ -22,7 +15,7 @@ LOG = logging.getLogger(__name__)
 def conj_grad_solve(A, b, P=None, x_0=None,
                     max_iter=-1, abs_tol=1e-20, rel_tol=1e-20,
                     verbose=False):
-    """
+    r"""
     Simple implementation of preconditioned conjugate gradient method
 
     See A. Meister "Numerik linearer Gleichungssysteme", p. 218f
@@ -96,8 +89,8 @@ def conj_grad_solve(A, b, P=None, x_0=None,
             pbar.update()
             if (norm <= abs_tol) or (norm_div_norm_b < rel_tol[0]):
                 break
-            LOG.debug("CG, it={}, reduced to {} {}".format(
-                i, norm, norm / norm_b, norm_b))
+            LOG.debug("CG, it=%s, reduced to %s %s %s",
+                      i, norm, norm / norm_b, norm_b)
 
             v[:] = A.dot(p)
             pAp = np.dot(v, p)
@@ -122,9 +115,9 @@ def conj_grad_solve(A, b, P=None, x_0=None,
         except Exception:
             pass
 
-    LOG.info("CG needed {}{} iterations to reduce to {} {}".format(
-        ("max=" if (i == max_iter) else ""), i, la.norm(r),
-        la.norm(r) / norm_b))
+    LOG.info("CG needed %s%s iterations to reduce to %s %s",
+             ("max=" if (i == max_iter) else ""), i, la.norm(r),
+             la.norm(r) / norm_b)
 
     for j in [_j for _j in range(len(rel_tol)) if rel_tol[_j] != -1]:
         xs[j] = x.copy()
@@ -165,9 +158,9 @@ def conj_grad_tall_solve(A, bs, P=None, x_0=None,
         if np.all((norms < abs_tol) | (norm_div_norm_b < rel_tol)):
             break
 
-        LOG.debug("CG, it={}, reduced to {} {}".format(
-            i, la.norm(rs),
-            np.asarray([la.norm(r) for r in rs.T]) / norms_b, norms_b))
+        LOG.debug("CG, it=%s, reduced to %s %s %s",
+                  i, la.norm(rs),
+                  np.asarray([la.norm(r) for r in rs.T]) / norms_b, norms_b)
 
         vs = A.dot(ps)
         vs_dot_ps = np.einsum('ij,ij->j', vs, ps)
@@ -184,9 +177,9 @@ def conj_grad_tall_solve(A, bs, P=None, x_0=None,
         alphas = new_alphas
         alphas[alphas == 0] = 1
 
-    LOG.info("CG needed {}{}  iterations to reduce to {} {}".format(
-        ("max=" if (i == max_iter) else ""), i, la.norm(rs),
-        np.asarray([la.norm(r) for r in rs.T]) / norms_b, norms_b))
+    LOG.info("CG needed %s%s iterations to reduce to %s %s %s",
+             ("max=" if (i == max_iter) else ""), i, la.norm(rs),
+             np.asarray([la.norm(r) for r in rs.T]) / norms_b, norms_b)
 
     return xs
 
