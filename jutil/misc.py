@@ -7,6 +7,36 @@ import numpy as np
 import logging
 
 
+try:
+    try:
+        if type(get_ipython()).__name__ == 'ZMQInteractiveShell':  # IPython Notebook!
+            from tqdm import tqdm_notebook as tqdm
+        else:  # IPython, but not a Notebook (e.g. terminal)
+            from tqdm import tqdm
+    except NameError:
+        from tqdm import tqdm
+except ImportError:
+    class tqdm(object):
+        def __init__(self, iterable=None, **kwargs):
+            self._iterable = iterable
+
+        def __enter__(self, **kwargs):
+            return self
+
+        def __iter__(self):
+            for obj in self._iterable:
+                yield obj
+
+        def update(self, **kwargs):
+            pass
+
+        def __exit__(self, *args):
+            return False
+
+        def sp(self, **kwargs):
+            pass
+
+
 def get_lena_256():
     """
     Returns the center of the lena image.

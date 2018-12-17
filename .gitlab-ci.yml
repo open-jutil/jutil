@@ -1,11 +1,7 @@
 tests_py2:
+  image: continuumio/miniconda:latest
   stage: test
   before_script:
-  - export MINICONDA=/home/gitlab-runner/miniconda2-jutil
-#  - rm -rf $MINICONDA
-#  - wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh -O miniconda2.sh
-#  - bash miniconda2.sh -b -p $MINICONDA
-  - export PATH=$MINICONDA/bin:$PATH
   - conda config --add channels conda-forge
   - conda config --add channels defaults
   script:
@@ -14,13 +10,9 @@ tests_py2:
   - python setup.py test
 
 tests_py3:
+  image: continuumio/miniconda3:latest
   stage: test
   before_script:
-  - export MINICONDA=/home/gitlab-runner/miniconda3-jutil
-#  - rm -rf $MINICONDA
-#  - wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh -O miniconda3.sh
-#  - bash miniconda3.sh -b -p $MINICONDA
-  - export PATH=$MINICONDA/bin:$PATH
   - conda config --add channels conda-forge
   - conda config --add channels defaults
   script:

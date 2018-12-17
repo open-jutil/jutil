@@ -23,4 +23,4 @@ from . import taketime
 from .version import VERSION, GIT_REVISION
 
 LOG = logging.getLogger(__name__)
-LOG.info("Starting JUTIL V{} GIT{}".format(VERSION, GIT_REVISION))
+LOG.info("Starting JUTIL V%s GIT%s", VERSION, GIT_REVISION)

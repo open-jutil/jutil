@@ -12,6 +12,7 @@ class _BaseNorm(object):
     A class to provide some basic functionality based on other functions that shall
     be provided by derived classes.
     """
+
     def hess_dot(self, x, vec):
         """
         Provides the product of the Hessian matrix of this norm with a vector.
@@ -65,8 +66,8 @@ class Ekblom(_BaseNorm):
         return self._p * pow(x ** 2 + self._eps, self._p / 2. - 1.) * x
 
     def hess_diag(self, x):
-        return self._p * ((self._p - 2.) * pow(x ** 2 + self._eps, self._p / 2. - 2.) * (x ** 2) +
-                          pow(x ** 2 + self._eps, self._p / 2. - 1.))
+        return self._p * ((self._p - 2.) * pow(x ** 2 + self._eps, self._p / 2. - 2.) * (x ** 2)
+                          + pow(x ** 2 + self._eps, self._p / 2. - 1.))
 
     def hess_dot(self, x, vec):
         return self.hess_diag(x) * vec
@@ -86,8 +87,8 @@ class BiSquared(_BaseNorm):
 
     def hess_diag(self, x):
         return np.where(np.abs(x) <= self._k,
-                        -6. * (1. - (x / self._k) ** 2) * ((2 * (x / (self._k ** 2))) ** 2) +
-                        3. * ((1. - ((x / self._k) ** 2)) ** 2) * 2 * (1 / (self._k ** 2)),
+                        -6. * (1. - (x / self._k) ** 2) * ((2 * (x / (self._k ** 2))) ** 2)
+                        + 3. * ((1. - ((x / self._k) ** 2)) ** 2) * 2 * (1 / (self._k ** 2)),
                         np.zeros_like(x))
 
     def hess_dot(self, x, vec):
@@ -102,6 +103,7 @@ class WeightedTVNorm(object):
     to the first dimension, the elements indices[1] to indices[2] - 1 the partial derivative
     with respect to the second dimension and so on.
     """
+
     def __init__(self, basenorm, weight, indices):
         self._base = basenorm
         self._weight = weight
@@ -204,7 +206,7 @@ class WeightedTVNorm(object):
 
 
 class L2Square(_BaseNorm):
-    """
+    r"""
     Norm is :math:`||x||_2^2 = \sum_i |x_i|^2`
     """
 
@@ -219,7 +221,7 @@ class L2Square(_BaseNorm):
 
 
 class LPPow(_BaseNorm):
-    """
+    r"""
     Norm is :math:`||x||_p = (\sum_i |x_i|^p)`
 
     Norm is regularized to be twice-differentiable with
@@ -237,12 +239,12 @@ class LPPow(_BaseNorm):
         return self._p * x * pow(x ** 2 + self._eps, self._p / 2. - 1)
 
     def hess_diag(self, x):
-        return (self._p * pow(x ** 2 + self._eps, self._p / 2. - 2) *
-                ((self._p - 1) * (x ** 2) + self._eps))
+        return (self._p * pow(x ** 2 + self._eps, self._p / 2. - 2)
+                * ((self._p - 1) * (x ** 2) + self._eps))
 
 
 class L1(_BaseNorm):
-    """
+    r"""
     Norm is :math:`||x||_1 = (\sum_i |x_i|)`
     """
 
@@ -260,7 +262,7 @@ class L1(_BaseNorm):
 
 
 class LInf(_BaseNorm):
-    """
+    r"""
     Norm is :math:`||x||_inf = (\max_i |x_i|)`
     """
 
