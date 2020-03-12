@@ -20,7 +20,12 @@ from . import operator
 from . import preconditioner
 from . import splitbregman
 from . import taketime
-from .version import VERSION, GIT_REVISION
+try:
+    from .version import VERSION as __version__
+    from .version import REVISION as __revision__
+except ImportError:
+    __version__ = "unbuilt-dev"
+    __revision__ = "unbuilt-dev"
 
 LOG = logging.getLogger(__name__)
-LOG.info("Starting JUTIL V%s GIT%s", VERSION, GIT_REVISION)
+LOG.info("Starting JUTIL V%s REV%s", __version__, __revision__)
