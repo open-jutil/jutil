@@ -6,6 +6,7 @@ import jutil.minimizer as minimizer
 import numpy as np
 import numpy.linalg as la
 from jutil.taketime import TakeTime
+import pylab
 
 
 class CostFunction(object):
@@ -64,7 +65,7 @@ class CostFunctionImage(object):
                 S[self.n + i, i] = -1
                 S[self.n + i, i + 256] = 1
         self._Sa_inv = S.tocsr()
-        self._norm = norms.WeightedTVNorm(norms.NormLPPow(p, 1e-5), self._Sa_inv, [self.n, 2 * self.n])
+        self._norm = norms.WeightedTVNorm(norms.LPPow(p, 1e-5), self._Sa_inv, [self.n, 2 * self.n])
 
     def init(self, x_i):
         self.__call__(x_i)
@@ -144,14 +145,14 @@ def split_bregman_2d_test(image_t, image, ig=None, weight=100, max_iter=300, mu=
             DiffOp[n + i, i + n_root] = 1
     D = DiffOp.tocsr()
 
-    A = scipy.sparse.lil_matrix((2 * 256 * 256 / 8, n))
+    A = scipy.sparse.lil_matrix((2 * 256 * 256 // 8, n))
     test = np.zeros((256, 256))
     i = 0
     for j in range(0, 256, 2):
         print(i)
         for k in range(0, 256, 4):
             delta = (k - j) / 256.
-            cols = j + np.asarray(map(int, np.arange(256) * delta))
+            cols = j + np.asarray(np.arange(256) * delta, dtype=int)
             assert min(cols) >= 0 and max(cols) <= 255, (k, J, delta, cols)
             rows = np.arange(256)
             A[i, rows * 256 + cols] = 1
@@ -168,7 +169,7 @@ def split_bregman_2d_test(image_t, image, ig=None, weight=100, max_iter=300, mu=
     ATA_DTD = op.Plus(op.Dot(A.T, A), op.Dot(D.T, D))
 
     x = cg.conj_grad_solve(ATA_DTD, A.T.dot(image), max_iter=300, abs_tol=1e-40, rel_tol=1e-40, verbose=True)
-    print(la.norm(x - IMage_t))
+    print(la.norm(x - image_t))
 
     b = np.zeros(2 * n)
     d = b
@@ -386,6 +387,6 @@ def dummy_test(Type, name, l1, l2):
     pylab.xlim(0, 255); pylab.ylim(0, 255)
     pylab.savefig(name +".png", dpi=300)
 
-#_test(CostFunctionLena, "lena", 60, 1)
-#_test(CostFunctionSquares, "squa", 6000, 5)
+#dummy_test(CostFunctionLena, "lena", 60, 1)
+dummy_test(CostFunctionSquares, "squa", 6000, 5)
 
