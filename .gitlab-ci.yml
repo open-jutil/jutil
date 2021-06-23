@@ -1,14 +1,3 @@
-tests_py2:
-  image: continuumio/miniconda:latest
-  stage: test
-  before_script:
-  - conda config --add channels conda-forge
-  - conda config --add channels defaults
-  script:
-  - conda install -y -q --file requirements.txt
-  - python setup.py build
-  - python setup.py test
-
 tests_py3:
   image: continuumio/miniconda3:latest
   stage: test
