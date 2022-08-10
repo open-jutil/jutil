@@ -166,6 +166,8 @@ def _test():
 
 
 def _test2():
+    jutil.misc.setup_logging()
+
     import jutil.minimizer as mini
     import numpy.linalg as la
     import matplotlib.pyplot as plt
@@ -177,10 +179,10 @@ def _test2():
         print(maxit)
         optimize = mini.Minimizer(stepper)
         optimize.conv_max_iteration = maxit
-        optimize2 = mini.Minimizer(mini.LevenbergMarquardtPredictorStepper(1, 10.))
-        optimize2.conv_max_iteration = maxit
+#        optimize2 = mini.Minimizer(mini.LevenbergMarquardtPredictorStepper(1, 10.))
+#        optimize2.conv_max_iteration = maxit
         x_f = optimize(J, 220 * np.ones_like(J._x_t))
-        x_f2 = optimize2(J, 220 * np.ones_like(J._x_t))
+#        x_f2 = optimize2(J, 220 * np.ones_like(J._x_t))
 #        J._lambda = 0
 #        x_f2 =  optimize(J, 220 * np.ones_like(J._x_t))
 #        x_f =  optimize(J, J._x_t + 10)
@@ -192,8 +194,8 @@ def _test2():
 #        print la.cond(F.jac(x_t).T.dot(F.jac(x_t)))
         plt.subplot(2, 1, 1)
         plt.plot(x_t, Atmosphere["altitude"])
-        plt.plot(x_f, Atmosphere["altitude"])
-#        plt.plot(x_f2, Atmosphere["altitude"], label="no")
+        plt.plot(x_f["x"], Atmosphere["altitude"])
+#        plt.plot(x_f2["x"], Atmosphere["altitude"], label="no")
         plt.legend()
         plt.subplot(2, 1, 2)
         plt.plot(J._F.jac(x_t).T, Atmosphere["altitude"])

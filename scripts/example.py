@@ -51,12 +51,12 @@ class CostFunction(object):
 
 def get_tomography_operator(size, skip):
     import scipy.sparse
-    A = scipy.sparse.lil_matrix((2 * (size ** 2) / (skip ** 2), size ** 2))
+    A = scipy.sparse.lil_matrix((2 * (size ** 2) // (skip ** 2), size ** 2))
     i = 0
     for j in range(0, size, skip):
         for k in range(0, size, skip):
             delta = (k - j) / float(size)
-            cols = j + np.asarray(map(int, np.arange(size) * delta))
+            cols = j + np.asarray(list(map(int, np.arange(size) * delta)))
             rows = np.arange(size)
             A[i, rows * size + cols] = 1
             i += 1
@@ -136,19 +136,22 @@ def execute(name, A, image, mu, lambd, noise, weight):
 
 def tomography():
     T = get_tomography_operator(256, 8)
-    for mu in [1e-1, 2e-1, 5e-1, 1e-0, 2e-0, 5e0]:
-        for weight in [1, 10, 50, 100, 200, 1000]:
-            execute("tlena256_{:010.4f}_{:010.4f}".format(mu, weight), T, jutil.misc.get_lena_256(), mu, 1, 0.01, weight)
-            execute("tphantom1_{:010.4f}_{:010.4f}".format(mu, weight), T, jutil.misc.get_phantom_1(), mu, 1, 0.01, weight)
+    for mu in [1e-5, 1e-4, 1e-3, 1e-1]:
+        for weight in [1]:
+            execute("tlena256_{:010.8f}_{:010.4f}".format(mu, weight), T, jutil.misc.get_lena_256(), mu, 1, 0.01, weight)
+            execute("tphantom1_{:010.8f}_{:010.4f}".format(mu, weight), T, jutil.misc.get_phantom_1(), mu, 1, 0.01, weight)
 
 
 def denoise():
     I = jutil.operator.Identity(256 ** 2)
-    for mu in [1e-1, 2e-1, 5e-1, 1, 2, 5]:
-        for weight in [1, 10, 50, 100, 200, 1000]:
+    for mu in [1e-3, 1e-2, 1e-1, 1]:
+        for weight in [1]: # , 10, 100, 1000]:
             execute("nlena256_{:010.4f}_{:010.4f}".format(mu, weight), I, jutil.misc.get_lena_256(), mu, 1, 0.5, weight)
             execute("nphantom1_{:010.4f}_{:010.4f}".format(mu, weight), I, jutil.misc.get_phantom_1(), mu, 1, 0.5, weight)
 
+jutil.misc.setup_logging()
 
+# tomography example
 tomography()
+# denoising example
 denoise()
