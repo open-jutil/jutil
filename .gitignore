@@ -2,6 +2,7 @@
 .idea/
 build
 jutil/version.py
+.vscode
 *.pyc
 *.swp
 *.patch

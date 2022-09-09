@@ -1,7 +1,8 @@
-from __future__ import print_function
+import numpy as np
 
 import jutil
-import numpy as np
+
+jutil.misc.setup_logging()
 
 
 Boltzmann_Constant = 1.3806488e-23
@@ -59,6 +60,25 @@ def model(wavenumber, pressures, xsc, temperatures, vmrs):
 
 
 class ForwardModel(object):
+    """
+    This class provides a very basic approximation to an actual
+    radiative transport model to do nadir sounding temperature
+    measurements. It simulates that the atmosphere emits and absorbs
+    with different strength at different altitudes, which allows
+    the reconstruction of a height-resolved temperature profile.
+
+    This class offers a very generic, but efficient interface to a
+    model for the purposes of inverse modelling. It allows to be called
+    with a parameter vector (here: atmospheric temperatures) and returns
+    a set of modelled output parameters (here: radiances at different channels).
+
+    In addition, it has a routine to compute and return the Jacobian matrix
+    and a routine to compute the product of a vector with the Jacobian. and the
+    product of its transpose. please note that the inversion only needs these
+    two routines and not the Jacobian itself (i.e. a matrix free implementation
+    is feasible.)
+    """
+
     def __init__(self, xscs):
         self._pressures = Atmosphere["pressure"]
         self._vmrs = Atmosphere["CO2"]
@@ -89,118 +109,92 @@ class ForwardModel(object):
         return self.jac(x).T.dot(vec)
 
 
-class CostFunction(object):
-    def __init__(self):
-        import scipy.sparse
-#        self._F = ForwardModel([1e-12, 1e-13, 1e-14, 1e-15, 1e-16, 1e-17, 5e-18, 1e-18, 5e-19, 1e-19, 5e-20, 1e-20, 1e-21, 1e-22, 1e-23, 1e-24])
-        self._F = ForwardModel([1e-14, 1e-15, 1e-16, 1.2e-16, 1e-17, 1.1e-17, 1e-18, 1e-19, 9.9e-19, 1e-20, 1.1e-20, 1e-21, 1e-22])
-        self._x_t = Atmosphere["temperature"]
-        self._lambda = 1e-8
-        self._y_t = self._F(self._x_t)
-        self._y = self._y_t * (100 + 5 * np.random.randn(len(self._y_t))) / 100.
+class CostFunction(jutil.costfunction.LeastSquaresCostFunction):
+    """
+    This cost function wraps the ForwardModel together with a
+    basic regularization based on finite differences.
 
-        self.m = len(self._y)
-        self.n = len(self._x_t)
-        self._D = scipy.sparse.lil_matrix((self.n, self.n))
-        for i in range(0, self.n - 1):
+    Please note that this implementation is matrix free aside the
+    sparse finite difference operator.
+    """
+
+    def __init__(self, lam):
+        import scipy.sparse
+        self._F = ForwardModel(
+            [1e-14, 1e-15, 1e-16, 1.2e-16, 1e-17, 1.1e-17,
+             1e-18, 1e-19, 9.9e-19, 1e-20, 1.1e-20, 1e-21, 1e-22])
+        self._x_t = Atmosphere["temperature"]
+        self._lambda = lam
+        self._rad_t = self._F(self._x_t)
+        self._rad = self._rad_t * (
+            100 + 5 * np.random.randn(len(self._rad_t))) / 100.
+
+        m = len(self._rad)
+        n = len(self._x_t)
+        self._D = scipy.sparse.lil_matrix((n, n))
+        for i in range(0, n - 1):
             self._D[i, i] = 1
             self._D[i, i + 1] = -1
         self._D = self._D.tocsr()
 
-    def init(self, x_i):
-        self.__call__(x_i)
+        def func(x):
+            """
+            The actual costfunction. This implements
+            (|| F(x) - y ||_2^2 + lambda ||d/dz x||_2^2) / m
 
-    def __call__(self, x):
-        dy = self._F(x) - self._y
-        self._chisqm = np.dot(dy, dy) / self.m
-        dx = self._D.dot(x)
-        self._chisqa = self._lambda * np.dot(dx, dx) / self.m
-        self._chisq = self._chisqm + self._chisqa
-        return self._chisq
+            The division by m allows an interpretation in a statistical
+            chi^2 style.
+            """
+            sqrt_m = m ** 0.5
+            dy = (self._F(x) - self._rad) / sqrt_m
+            dx = ((self._lambda / self.m) ** 0.5) * self._D.dot(x)
+            value = np.concatenate([dy, dx])
+            model_operator = jutil.operator.Function(
+                shape=(m, n),
+                F=lambda vec: self._F.jac_dot(x, vec),
+                FT=lambda vec: self._F.jac_T_dot(x, vec)
+            )
+            derivative = jutil.operator.Scale(
+                jutil.operator.VStack([
+                    model_operator,
+                    jutil.operator.Scale(
+                        self._D, self._lambda)]), 1 / sqrt_m)
+            return value, derivative
 
-    def jac(self, x):
-        return (2. * self._F.jac_T_dot(x, self._F(x) - self._y) + 2. * self._lambda * self._D.T.dot(self._D.dot(x))) / self.m
+        super().__init__(
+            func, n, m,
+            func_returns_both=True)
 
-    def hess_dot(self, x, vec):
-        return (2. * self._F.jac_T_dot(x, self._F.jac_dot(x, vec)) + 2. * self._lambda * self._D.T.dot(self._D.dot(vec))) / self.m
-
-    @property
-    def chisq(self):
-        return self._chisq
-
-    @property
-    def chisq_m(self):
-        return self._chisqm
-
-    @property
-    def chisq_a(self):
-        return self._chisqa
-
-
-def _test():
-    h = 1e-3
-    xsc = 1e-18
-    y0, adj = planck(300, 790)
-    y1, _ = planck(300 + h, 790)
-    print((y1 - y0) / h, adj)
-
-    y0, adj = convert_vmr_to_numberdensity(300, 100, 1e-6)
-    y1, _ = convert_vmr_to_numberdensity(300 + h, 100, 1e-6)
-    print((y1 - y0) / h, adj)
-
-    y0, adj = convert_vmr_to_emissivity(300, 100, 1e-6, xsc)
-    y1, _ = convert_vmr_to_emissivity(300 + h, 100, 1e-6, xsc)
-    print((y1 - y0) / h, adj)
-
-    y0, adj = model(792, Atmosphere["pressure"], xsc, Atmosphere["temperature"], Atmosphere["CO2"])
-    t2 = Atmosphere["temperature"]
-    adj2 = np.zeros_like(adj)
-
-    for i in range(len(adj2)):
-        t2[i] += h
-        y1, _ = model(792, Atmosphere["pressure"], xsc, t2, Atmosphere["CO2"])
-        t2[i] -= h
-        adj2[i] = (y1 - y0) / h
-    print(adj2)
-    print(adj)
+    def hess_diag(self, x):
+        return np.ones_like(x)
 
 
-def _test2():
-    jutil.misc.setup_logging()
+def main():
 
     import jutil.minimizer as mini
-    import numpy.linalg as la
     import matplotlib.pyplot as plt
-    J = CostFunction()
+    # The cost function. lam determines regularization strength
+    # Vary by (small) orders of magnitude to see the impact
+    J = CostFunction(lam=1e-8)
+    # Initiate a basic Levenberg-Marquardt minimization
+    # with at most 20 iterations
+    optimize = mini.Minimizer(
+        mini.LevenbergMarquardtReductionStepper(1, 10.),
+        tol={"max_iteration": 20})
+    result = optimize(J, 220 * np.ones_like(J._x_t))
+    x_t = J._x_t
 
-    for maxit, stepper in [
-            (20, mini.LevenbergMarquardtReductionStepper(1, 10.)),
-    ]:
-        print(maxit)
-        optimize = mini.Minimizer(stepper)
-        optimize.conv_max_iteration = maxit
-#        optimize2 = mini.Minimizer(mini.LevenbergMarquardtPredictorStepper(1, 10.))
-#        optimize2.conv_max_iteration = maxit
-        x_f = optimize(J, 220 * np.ones_like(J._x_t))
-#        x_f2 = optimize2(J, 220 * np.ones_like(J._x_t))
-#        J._lambda = 0
-#        x_f2 =  optimize(J, 220 * np.ones_like(J._x_t))
-#        x_f =  optimize(J, J._x_t + 10)
-        x_t = J._x_t
-#        print la.norm(x_f - x_t), la.norm(np.diff(x_f))
-#        print la.norm(J._y - J._F(x_f))
-#        F = J._F
-#        print 1
-#        print la.cond(F.jac(x_t).T.dot(F.jac(x_t)))
-        plt.subplot(2, 1, 1)
-        plt.plot(x_t, Atmosphere["altitude"])
-        plt.plot(x_f["x"], Atmosphere["altitude"])
-#        plt.plot(x_f2["x"], Atmosphere["altitude"], label="no")
-        plt.legend()
-        plt.subplot(2, 1, 2)
-        plt.plot(J._F.jac(x_t).T, Atmosphere["altitude"])
-        plt.show()
+    plt.subplot(2, 1, 1)
+    plt.plot(x_t, Atmosphere["altitude"], label="true atmospheric temperature")
+    plt.plot(result["x"], Atmosphere["altitude"], label="retrieved atmospheric temperature")
+    plt.ylabel("altitude (km)")
+    plt.xlabel("temperature (K)")
+    plt.legend()
+    plt.subplot(2, 1, 2)
+    plt.title("sensitivities of different channels")
+    plt.plot(J._F.jac(x_t).T, Atmosphere["altitude"])
+    plt.ylabel("altitude (km)")
+    plt.show()
 
 
-#        print J._F.jac(J._x_t)
-_test2()
+main()

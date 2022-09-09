@@ -17,13 +17,13 @@ def minimum_curvature_surface(data, lam=None, T=0.5):
 
     (the implementation here is much simpler/different,
      but quite efficient; pygmt.surface implements the
-     Smith code; Results for T >= 0.4 are veery similar
+     Smith code; Results for T >= 0.4 are very similar
      to pygmt implementation)
 
     Parameters
     ----------
 
-    data : 2-D ndarray
+    data : 2-D masked ndarray
         2-D array with data. missing values must be masked
 
     lam : weight or None

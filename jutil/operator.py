@@ -295,8 +295,8 @@ class HStack(object):
 
 class VStack(object):
     """
-    Vertically "stacks" a number of operators to provide an operator supplying a larger
-    result vector.
+    Vertically "stacks" a number of operators to provide an operator supplying
+    a larger result vector.
 
     Attributes
     ----------

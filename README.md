@@ -1,7 +1,6 @@
 [![build status](https://iffgit.fz-juelich.de/unger/jutil/badges/master/build.svg)](https://iffgit.fz-juelich.de/unger/jutil/commits/master) [![coverage report](https://iffgit.fz-juelich.de/unger/jutil/badges/master/coverage.svg)](https://iffgit.fz-juelich.de/unger/jutil/commits/master)
 
-JUTIL
-=====
+# JUTIL
 
 This package of python utilities is designed to facilitate the solving of medium-sized
 ill-posed problems by means of iterative techniques.
@@ -12,14 +11,13 @@ can be derived from the testcases.
 Please contact <j.ungermann@fz-juelich.de> if you require assistance.
 
 
-Installation
-------------
+# Installation
 
 There are other ways to install this software package, but our prefered way is described below.
 
 * Install Anaconda.
 
-  1. Download of miniconda Python2.7 from https://conda.io/miniconda.html
+  1. Download of miniconda Python3 from https://conda.io/miniconda.html
 
   2. Install it to home or private drive
 
@@ -30,12 +28,10 @@ There are other ways to install this software package, but our prefered way is d
 
   1. Execute “conda config --add channels conda-forge”
 
-  2. Execute “conda config --add channels defaults”
-
 
 * Retrieve jutil package:
 
-  1. Clone jutil source code (“git clone git@software.icg.kfa-juelich.de:/joernu76/jutil")
+  1. Clone jutil source code (“git clone <URL>")
 
 
 * Install jutil and its dependencies:
@@ -46,3 +42,17 @@ There are other ways to install this software package, but our prefered way is d
 
   3. Execute “python setup.py install”
 
+
+# First steps
+
+The basic idea behind this library is to offer tools to simplify the creation
+and maintenance of cost function for large konvex minimization problems,
+i.e. problems that can be solved via Newton-type solvers. 
+
+A CostFunction class offers necessary methods for the solver to work and
+allows an efficient implementation for, e.g., the computation of first
+or second derivatives. An explicit aim of the design is to avoid
+matrix-matrix-multiplications, which is facilitated by a series of operator
+classes. 
+
+A series of examples is provided in the scripts directory.

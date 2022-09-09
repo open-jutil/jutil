@@ -68,6 +68,7 @@ class OptimizeResult(dict):
     conv : dict
         Dictionary indicating which stopping criteria terminated the optimization.
     """
+
     def __getattr__(self, name):
         try:
             return self[name]
@@ -88,7 +89,8 @@ class Minimizer(object):
     OptimizeResult
         One of the Stepper classes provided in this module.
     """
-    def __init__(self, stepper):
+
+    def __init__(self, stepper, tol=None):
         self._stepper = stepper
         self._conv = {
             "min_costfunction_gradient": 0,
@@ -97,6 +99,8 @@ class Minimizer(object):
             "min_normalized_stepsize": 0,
             "max_iteration": 10,
         }
+        if tol is not None:
+            self.update_tolerances(tol)
         self._log = logging.getLogger(__name__ + ".Minimizer")
 
     def update_tolerances(self, tol):
@@ -118,7 +122,7 @@ class Minimizer(object):
             max_iteration: Terminate if the number of iterations surpasses this limit.
 
         """
-        assert all([key in self._conv for key in tol]), tol
+        assert all([key in self._conv for key in tol]), (tol, list(self._conv.keys()))
         self._conv.update(tol)
 
     def __call__(self, J, x_0, callback=None):
@@ -358,7 +362,8 @@ class TruncatedCGTrustRegionStepper(object):
     """
     todo newton requires dampening (p - 1) for l_p normed cost functions?
     """
-    def __init__(self, conv_rel=1e-4, factor=10, cg_max_iter=-1, verbose=False):
+
+    def __init__(self, conv_rel=1e-6, factor=10, cg_max_iter=-1, verbose=False):
         self._conv_rel_init = conv_rel
         self._conv_rel = self._conv_rel_init
         self._factor = factor
@@ -414,6 +419,7 @@ class TruncatedCGTrustRegionStepper2(object):
     """
     todo newton requires dampening (p - 1) for l_p normed cost functions?
     """
+
     def __init__(self, conv_rel=1e-4, factor=10, cg_max_iter=-1, verbose=False):
         self._conv_rel_init = conv_rel
         self._conv_rel = self._conv_rel_init

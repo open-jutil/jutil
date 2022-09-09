@@ -1,11 +1,9 @@
-from __future__ import print_function
-
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
+
 import jutil
-import jutil.misc
 import jutil.norms as norms
 
 
@@ -153,5 +151,6 @@ jutil.misc.setup_logging()
 
 # tomography example
 tomography()
+
 # denoising example
 denoise()

@@ -88,6 +88,7 @@ class LeastSquaresCostFunction(AbstractCostFunction):
         function returning the product of hessian with a vector, returns an array_like
     epsilon : float, optional
     """
+
     def __init__(self, func, n, m=1, norm=jutil.norms.L2Square(),
                  jac=None, func_returns_both=False, epsilon=1e-6):
         self._func, self._func_jac = func, jac
@@ -162,6 +163,7 @@ class WrapperCostFunction(AbstractCostFunction):
         function returning the diagonal of the Hessian.
     epsilon : float, optional
     """
+
     def __init__(self, func, n, m=1,
                  jac=None, hess=None, hess_dot=None, hess_diag=None,
                  epsilon=1e-6):
@@ -199,7 +201,19 @@ class WrapperCostFunction(AbstractCostFunction):
 
 
 class ScaledCostFunction(AbstractCostFunction):
+    """
+    This function allows the scaling of elements of the state vector, e.g., to bring
+    all to a similar order of magnitude or sensitivity.
+    """
+
     def __init__(self, D, J):
+        """
+        Constructor
+
+        Args:
+            D (_type_): A (sparse) square matrix to scale the state vector
+            J (_type_): A cost function
+        """
         self._D, self._J = D, J
         assert len(D.shape) == 2
         assert D.shape[0] == D.shape[1]
@@ -233,7 +247,7 @@ class ScaledCostFunction(AbstractCostFunction):
     def hess_diag(self, x):
         return jutil.linalg.quick_diagonal_product(self._D, self._J.hess_diag(x))
 
-    @property
+    @ property
     def chisq(self):
         return self._J.chisq
 
@@ -242,8 +256,8 @@ class CountingCostFunction(AbstractCostFunction):
     """
     Wrapper around a given costfunction, enhanced by counting the number of
     method calls for statistical purposes.
-
     """
+
     def __init__(self, J):
         self._J = J
         self.m, self.n = J.m, J.n
@@ -278,14 +292,14 @@ class CountingCostFunction(AbstractCostFunction):
         self.cnt_hess_diag += 1
         return self._J.hess_diag(x)
 
-    @property
+    @ property
     def chisq(self):
         return self._J.chisq
 
-    @property
+    @ property
     def chisq_m(self):
-        return self._J.chisq_m if hasattr(self._J, "chisq_m") else None
+        return getattr(self._J, "chisq_m", None)
 
-    @property
+    @ property
     def chisq_a(self):
-        return self._J.chisq_a if hasattr(self._J, "chisq_a") else None
+        return getattr(self._J, "chisq_a", None)

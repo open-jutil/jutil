@@ -3,8 +3,6 @@
 # Author: J. Ungermann
 #
 
-from __future__ import print_function
-
 import scipy.sparse
 import numpy as np
 
