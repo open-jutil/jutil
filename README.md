@@ -55,4 +55,9 @@ or second derivatives. An explicit aim of the design is to avoid
 matrix-matrix-multiplications, which is facilitated by a series of operator
 classes. 
 
-A series of examples is provided in the scripts directory.
+Two examples are provided in the scripts directory. scripts/radtrans.py gives
+an example for a potentially complicated non-linear forward model wrapped by
+a cost function with regularization. scripts/image_reconstruction.py shows
+how linear models can be used for a tomographic image reconstruction and denoising
+using different norms.
+
