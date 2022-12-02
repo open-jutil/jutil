@@ -27,7 +27,25 @@ import jutil.regularization as reg
      (reg.create_l2, np.pi, 8 * np.pi, 4.12855, 33.0384)
      ])
 def test_l(xs, rel, func, val0, val1, val2, val3):
-    L = func(xs, np.ones_like(xs), 1)
+    L = func(xs, 1, 1)
+
+    ys = np.sin(xs)
+    temp = L.dot(ys)
+    # int_0^2pi sin(x)^2 dx = pi
+    # int_0^2pi cos(x)^2 dx = pi
+    # int_0^2pi (-sin(x))^2 dx = pi
+    assert temp.dot(temp).sum() == pytest.approx(val0, rel=rel)
+
+    L = func(xs, 2, 1)
+
+    ys = np.sin(xs)
+    temp = L.dot(ys)
+    # int_0^2pi sin(x)^2 dx = pi
+    # int_0^2pi cos(x)^2 dx = pi
+    # int_0^2pi (-sin(x))^2 dx = pi
+    assert temp.dot(temp).sum() == pytest.approx(0.25 * val0, rel=rel)
+
+    L = func(xs, np.ones_like(xs), np.ones(len(xs) - 1))
 
     ys = np.sin(xs)
     temp = L.dot(ys)
@@ -102,8 +120,10 @@ def test_generate_regularization():
     scales0 = [10., 10.]
     scales1 = [5., 10.]
     Ls = reg.generate_regularization(axes, scales0=scales0, scales1=scales1)
-    assert np.allclose(L0_a, Ls[0].toarray())
-    assert np.allclose(L1_a, Ls[1].toarray())
+    assert np.allclose(L0_a[:3], Ls.toarray()[:3])
+    assert np.allclose(L0_a[3:5], Ls.toarray()[5:7])
+    assert np.allclose(L1_a[:2], Ls.toarray()[3:5])
+    assert np.allclose(L1_a[2:], Ls.toarray()[7:])
 
     Sa_inv_a = np.array([[1.5, -1, 0, 0, 0, 0],
                          [-1, 1.5, 0, 0, 0, 0],
@@ -119,3 +139,78 @@ def test_generate_regularization():
     Ls = reg.generate_regularization(axes, list_stds=list_stds, list_corr=list_corr)
     Sa_inv_t = reg.generate_inverse_covmatrix(Ls)
     assert np.allclose(Sa_inv_a, Sa_inv_t.toarray())
+
+
+def test2d_l0():
+    corr_x, corr_z = 1, 1
+    val0 = 9.8696
+    val1 = 20242.2
+    rel = 0.01
+    xs = np.linspace(0, 2 * np.pi, 21)
+    zs = np.linspace(0, 1 * np.pi, 20)
+    xxs, zzs = np.meshgrid(xs, zs)
+    L0 = reg.create2d_l0(xs, zs, np.ones_like(xxs), corr_x, corr_z)
+
+    ys = np.sin(xxs + zzs).reshape(-1)
+    temp = L0.dot(ys)
+    # int_0^2pi sin(x)^2 dx
+    # int_0^2pi cos(x)^2 dx
+    # int_0^2pi (-sin(x))^2 dx
+    assert pytest.approx(val0, rel=rel) == temp.dot(temp).sum()
+
+    ys = (xxs ** 2 * zzs).reshape(-1)
+    temp = L0.dot(ys)
+    # int_0^2pi x^4 dx
+    # int_0^2pi (2x)^2 dx
+    # int_0^2pi 4 dx
+    assert pytest.approx(val1, rel=rel) == temp.dot(temp).sum()
+
+
+def test2d_l1x():
+    corr_x, corr_z = 1, 1
+    val0 = 9.8696
+    val1 = 3418
+    rel = 0.01
+    xs = np.linspace(0, 2 * np.pi, 21)
+    zs = np.linspace(0, 1 * np.pi, 20)
+    xxs, zzs = np.meshgrid(xs, zs)
+    L0 = reg.create2d_l1x(xs, zs, np.ones_like(xxs), corr_x, corr_z)
+
+    ys = np.sin(xxs + zzs).reshape(-1)
+    temp = L0.dot(ys)
+    # int_0^2pi sin(x)^2 dx
+    # int_0^2pi cos(x)^2 dx
+    # int_0^2pi (-sin(x))^2 dx
+    assert pytest.approx(val0, rel=rel) == temp.dot(temp).sum()
+
+    ys = (xxs ** 2 * zzs).reshape(-1)
+    temp = L0.dot(ys)
+    # int_0^2pi x^4 dx
+    # int_0^2pi (2x)^2 dx
+    # int_0^2pi 4 dx
+    assert pytest.approx(val1, rel=rel) == temp.dot(temp).sum()
+
+
+def test2d_l1y():
+    corr_x, corr_z = 1, 1
+    val0 = 9.8696
+    val1 = 6152.89
+    rel = 0.01
+    xs = np.linspace(0, 2 * np.pi, 21)
+    zs = np.linspace(0, 1 * np.pi, 20)
+    xxs, zzs = np.meshgrid(xs, zs)
+    L0 = reg.create2d_l1y(xs, zs, np.ones_like(xxs), corr_x, corr_z)
+
+    ys = np.sin(xxs + zzs).reshape(-1)
+    temp = L0.dot(ys)
+    # int_0^2pi sin(x)^2 dx
+    # int_0^2pi cos(x)^2 dx
+    # int_0^2pi (-sin(x))^2 dx
+    assert pytest.approx(val0, rel=rel) == temp.dot(temp).sum()
+
+    ys = (xxs ** 2 * zzs).reshape(-1)
+    temp = L0.dot(ys)
+    # int_0^2pi x^4 dx
+    # int_0^2pi (2x)^2 dx
+    # int_0^2pi 4 dx
+    assert pytest.approx(val1, rel=rel) == temp.dot(temp).sum()
