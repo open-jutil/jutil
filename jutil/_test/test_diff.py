@@ -35,8 +35,8 @@ def test_fd_hess():
 
 
 def get_diff_op_old(mask):
-    n = mask.sum() * 3
-    count = n / 3
+    n = int(mask.sum() * 3)
+    count = int(n / 3)
 
     DiffOp = scipy.sparse.lil_matrix((2 * n, n))
     mask1 = mask.copy().squeeze()
