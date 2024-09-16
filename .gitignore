@@ -1,7 +1,7 @@
 .cache/
 .idea/
 build
-jutil/version.py
+jutil/_version.py
 .vscode
 *.pyc
 *.swp
